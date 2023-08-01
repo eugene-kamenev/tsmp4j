@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'groovy'
+    id 'idea'
+    id 'maven-publish'
+}
+
+group = 'com.github.eugene-kamenev'
+version = '1.0'
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    api "com.github.wendykierp:JTransforms:$jtransformsVersion"
+    testImplementation "org.spockframework:spock-core:$spockVersion"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+java {
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            // Set the URL to your repository (local or remote)
+            mavenLocal()
+        }
+    }
+}
