@@ -15,16 +15,9 @@
  * limitations under the License.
  */
 
-package com.github.eugene.kamenev.tsmp4j;
+package com.github.eugene.kamenev.tsmp4j.utils;
 
 public class Util {
-    public static double[] reverse(double[] arr) {
-        double[] inv = new double[arr.length];
-        for (int i=0; i<inv.length; i++) {
-            inv[i] = arr[arr.length-1-i];
-        }
-        return inv;
-    }
 
     public static int[] createRange(int start, int end, int step) {
         // Create the range of integers in the specified interval and step
