@@ -94,8 +94,16 @@ public class MPX extends BaseMatrixProfileAlgorithm {
         int len = mp.length;
         for (int i = 0; i < len; i++) {
             if (!crossCorrelation) {
-                mp[i] =
-                    (mp[i] == -1.0) ? Double.POSITIVE_INFINITY : Math.sqrt(2.0 * w * (1.0 - mp[i]));
+                if (mp[i] == -1.0) {
+                    mp[i] = Double.POSITIVE_INFINITY;
+                } else {
+                    var value = Math.sqrt(2.0 * w * (1.0 - mp[i]));
+                    if (Double.isNaN(value)) {
+                        mp[i] = 0;
+                    } else {
+                        mp[i] = value;
+                    }
+                }
             } else {
                 if (mp[i] > 1.0) {
                     mp[i] = 1.0;

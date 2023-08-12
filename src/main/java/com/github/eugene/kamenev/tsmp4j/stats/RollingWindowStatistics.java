@@ -30,7 +30,7 @@ public class RollingWindowStatistics implements DoubleFunction<Stats> {
     /**
      * Required for MPX algorithm.
      */
-    private final boolean computeInverseStdDev;
+    private final boolean useInverseStdDev;
     private final Buffer.ObjBuffer<Stats> statsBuffer;
     private int dataCount = 0;
     private double currentMean = 0;
@@ -44,11 +44,11 @@ public class RollingWindowStatistics implements DoubleFunction<Stats> {
      * @param windowSize The size of the data window for which statistics are computed.
      */
     public RollingWindowStatistics(int windowSize, int statsBufferSize,
-        boolean computeInverseStdDev) {
+        boolean useInverseStdDev) {
         this.dataBuffer = new Buffer.DoubleBuffer(windowSize);
         this.statsBuffer =
             statsBufferSize > 0 ? new Buffer.ObjBuffer<>(new Stats[statsBufferSize]) : null;
-        this.computeInverseStdDev = computeInverseStdDev;
+        this.useInverseStdDev = useInverseStdDev;
     }
 
     /**
@@ -77,17 +77,6 @@ public class RollingWindowStatistics implements DoubleFunction<Stats> {
         this.currentMean += (dataPoint - this.currentMean) / this.dataCount;
         this.varianceSum += (dataPoint - previousMean) * (dataPoint - this.currentMean);
 
-        var inverseStdDev = 0.0;
-
-        if (this.computeInverseStdDev) {
-            double sumOfSquares = 0.0;
-            // there should be a better way to do this, and tsmp computes this differently for MPX
-            for (int i = 0; i < this.dataCount; i++) {
-                double deviation = this.dataBuffer.get(i) - this.currentMean;
-                sumOfSquares += deviation * deviation;
-            }
-            inverseStdDev = 1 / Math.sqrt(sumOfSquares);
-        }
 
         double sampleVariance = 0.0d;
         double populationVariance = 0;
@@ -98,7 +87,7 @@ public class RollingWindowStatistics implements DoubleFunction<Stats> {
             sampleVariance = 0.0d;
             populationVariance = 0.0d;
         }
-
+        var inverseStdDev = sanitizeValue(1 / Math.sqrt(varianceSum));
         var stats = new Stats(dataPoint, this.currentMean, this.varianceSum,
             computeStdDev(sampleVariance),
             computeStdDev(populationVariance), inverseStdDev, totalDataCount);
@@ -142,10 +131,10 @@ public class RollingWindowStatistics implements DoubleFunction<Stats> {
     }
 
     /**
-     * @return if the inverse standard deviation is computed.
+     * @return if the inverse standard deviation is used.
      */
-    public boolean isComputeInverseStdDev() {
-        return computeInverseStdDev;
+    public boolean isUseInverseStdDev() {
+        return useInverseStdDev;
     }
 
     public Buffer.ObjBuffer<Stats> getStatsBuffer() {
@@ -160,7 +149,7 @@ public class RollingWindowStatistics implements DoubleFunction<Stats> {
     public double getStdDev(int i) {
         i += this.dataBuffer.getLength() - 1;
         var stat = this.statsBuffer.get(i);
-        return this.computeInverseStdDev ? stat.invStdDev() : stat.populationStdDev();
+        return this.useInverseStdDev ? stat.invStdDev() : stat.populationStdDev();
     }
 
     public double getX(int i) {
