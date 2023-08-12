@@ -20,7 +20,8 @@ package com.github.eugene.kamenev.tsmp4j.algo.pmp;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.function.Supplier;
 
-public interface PanMatrixProfileAlgorithm<S extends WindowStatistic> extends Supplier<PanMatrixProfile> {
+public interface PanMatrixProfileAlgorithm<S extends WindowStatistic> extends
+    Supplier<PanMatrixProfile> {
 
     void update(double value);
 

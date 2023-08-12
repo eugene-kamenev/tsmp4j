@@ -21,6 +21,7 @@ import com.github.eugene.kamenev.tsmp4j.utils.Buffer;
 import java.util.function.DoubleFunction;
 
 public interface RollingWindowStatistics<S extends WindowStatistic> extends DoubleFunction<S> {
+
     double x(int i);
 
     double mean(int i);

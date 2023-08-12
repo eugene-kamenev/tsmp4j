@@ -29,7 +29,8 @@ import java.util.Arrays;
  * Reference: <a
  * href="https://github.com/matrix-profile-foundation/tsmp/blob/master/R/mpx.R">mpx.R</a>
  */
-public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements DistanceProfileFunction<MPXStatistics> {
+public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements
+    DistanceProfileFunction<MPXStatistics> {
 
     private final boolean crossCorrelation;
 
@@ -122,7 +123,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements Di
     }
 
     public static MatrixProfile of(double[] ts, int windowSize) {
-        var mpx = new MPX(windowSize, ts.length,  false);
+        var mpx = new MPX(windowSize, ts.length, false);
         Arrays.stream(ts)
             .forEach(mpx::update);
         return mpx.get();
@@ -157,7 +158,8 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements Di
         return new MatrixProfile(mp, mpi);
     }
 
-    private static <S extends WindowStatistic> void computeJoin(RollingWindowStatistics<S> ts, RollingWindowStatistics<S> query,
+    private static <S extends WindowStatistic> void computeJoin(RollingWindowStatistics<S> ts,
+        RollingWindowStatistics<S> query,
         int w, double[] mp, int[] mpi, double[] mpb, int[] mpib) {
         int profile_len = ts.getStatsBuffer().getLength() - w + 1;
         int profile_lenb = query.getStatsBuffer().getLength() - w + 1;

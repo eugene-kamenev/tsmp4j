@@ -40,7 +40,8 @@ public class MPXRollingWindowStatistics extends BaseRollingWindowStatistics<MPXS
                 dg = (x - currentMean) + (head.x() - tail.mean());
             }
         }
-        return new MPXStatistics(x, mean, Util.sanitizeValue(1 / Math.sqrt(this.varianceSum)), id, df, dg);
+        return new MPXStatistics(x, mean, Util.sanitizeValue(1 / Math.sqrt(this.varianceSum)), id,
+            df, dg);
     }
 
     public double df(int i) {

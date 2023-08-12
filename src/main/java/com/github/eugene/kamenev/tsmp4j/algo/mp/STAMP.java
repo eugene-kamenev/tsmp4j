@@ -45,11 +45,13 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
     @Override
     public MatrixProfile get(double[] query) {
         if (this.isReady()) {
-            var qs = new BaseRollingWindowStatistics<>(query.length, new BaseWindowStatistic[query.length]);
+            var qs = new BaseRollingWindowStatistics<>(query.length,
+                new BaseWindowStatistic[query.length]);
             for (double v : query) {
                 qs.apply(v);
             }
-            return stamp(qs, this.rollingStatistics, this.rollingStatistics.windowSize(), this.distanceProfileFunction);
+            return stamp(qs, this.rollingStatistics, this.rollingStatistics.windowSize(),
+                this.distanceProfileFunction);
         }
         return null;
     }
@@ -57,42 +59,14 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
     @Override
     public MatrixProfile get() {
         if (this.isReady()) {
-            return stamp(this.rollingStatistics, this.rollingStatistics.windowSize(), this.distanceProfileFunction);
+            return stamp(this.rollingStatistics, this.rollingStatistics.windowSize(),
+                this.distanceProfileFunction);
         }
         return null;
     }
 
-    public static MatrixProfile of(double[] ts, double[] query) {
-        var tsStats = new BaseRollingWindowStatistics<>(ts.length, ts.length);
-        for (double v : ts) {
-            tsStats.apply(v);
-        }
-        var queryStats = new BaseRollingWindowStatistics<>(query.length, query.length);
-        for (double v : query) {
-            queryStats.apply(v);
-        }
-        return stamp(tsStats, queryStats, query.length, new MASS2<>());
-    }
-
-    public static MatrixProfile of(double[] ts, int window) {
-        var tsStats = new BaseRollingWindowStatistics<>(window, ts.length);
-        for (double v : ts) {
-            tsStats.apply(v);
-        }
-        return stamp(tsStats, window, new MASS2<>());
-    }
-
-    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts, int window,
-        DistanceProfileFunction<S> ds) {
-        return stamp(ts, window, ts.getStatsBuffer().getLength() - window + 1, ts, true, ds);
-    }
-
-    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts, RollingWindowStatistics<S> query,
-        int window, DistanceProfileFunction<S> ds) {
-        return stamp(query, window, ts.getStatsBuffer().getLength() - window + 1, ts, false, ds);
-    }
-
-    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> tsA, int window, int w,
+    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> tsA,
+        int window, int w,
         RollingWindowStatistics<S> tsB, boolean trivialMatch, DistanceProfileFunction<S> ds) {
         var n = tsA.getStatsBuffer().getLength();
         var matrixProfile = new double[n - window + 1];
@@ -127,6 +101,36 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
         }
 
         return new MatrixProfile(matrixProfile, matrixProfileIndex);
+    }
+
+    public static MatrixProfile of(double[] ts, double[] query) {
+        var tsStats = new BaseRollingWindowStatistics<>(ts.length, ts.length);
+        for (double v : ts) {
+            tsStats.apply(v);
+        }
+        var queryStats = new BaseRollingWindowStatistics<>(query.length, query.length);
+        for (double v : query) {
+            queryStats.apply(v);
+        }
+        return stamp(tsStats, queryStats, query.length, new MASS2<>());
+    }
+
+    public static MatrixProfile of(double[] ts, int window) {
+        var tsStats = new BaseRollingWindowStatistics<>(window, ts.length);
+        for (double v : ts) {
+            tsStats.apply(v);
+        }
+        return stamp(tsStats, window, new MASS2<>());
+    }
+
+    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts,
+        int window, DistanceProfileFunction<S> ds) {
+        return stamp(ts, window, ts.getStatsBuffer().getLength() - window + 1, ts, true, ds);
+    }
+
+    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts,
+        RollingWindowStatistics<S> query, int window, DistanceProfileFunction<S> ds) {
+        return stamp(query, window, ts.getStatsBuffer().getLength() - window + 1, ts, false, ds);
     }
 
     private static int[] getDistanceProfileIndex(int n, int index, int w) {

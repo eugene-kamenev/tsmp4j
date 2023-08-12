@@ -18,9 +18,13 @@
 package com.github.eugene.kamenev.tsmp4j.stats;
 
 public interface WindowStatistic {
+
     double x();
+
     double mean();
+
     double stdDev();
+
     long id();
 
 }

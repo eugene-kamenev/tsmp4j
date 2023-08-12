@@ -1,8 +1,8 @@
 package com.github.eugene.kamenev.tsmp4j.algo.pnp
 
 import com.github.eugene.kamenev.tsmp4j.BaseSpec
-import com.github.eugene.kamenev.tsmp4j.utils.Util
 import com.github.eugene.kamenev.tsmp4j.algo.pmp.SKIMP
+import com.github.eugene.kamenev.tsmp4j.utils.Util
 
 class SKIMPSpec extends BaseSpec {
 

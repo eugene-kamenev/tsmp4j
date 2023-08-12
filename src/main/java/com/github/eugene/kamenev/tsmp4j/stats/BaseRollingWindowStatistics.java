@@ -32,13 +32,9 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     private final Buffer.DoubleBuffer dataBuffer;
 
     private final Buffer.ObjBuffer<S> statsBuffer;
-
-    private int dataCount = 0;
-
     protected double currentMean = 0;
-
     protected double varianceSum = 0;
-
+    private int dataCount = 0;
     private long totalDataCount = 0;
 
     public BaseRollingWindowStatistics(int windowSize, S[] statsBuffer) {
@@ -74,14 +70,15 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
         if (this.dataCount > 1) {
             populationVariance = this.varianceSum / this.dataCount;
         }
-        var stat = computeStats(dataPoint, this.currentMean, computeStdDev(populationVariance), totalDataCount);
+        var stat = computeStats(dataPoint, this.currentMean, computeStdDev(populationVariance),
+            totalDataCount);
         this.getStatsBuffer().addToEnd(stat);
         return stat;
     }
 
     @SuppressWarnings("unchecked")
     protected S computeStats(double x, double mean, double stdDev, long id) {
-       return (S) new BaseWindowStatistic(x, mean, stdDev, id);
+        return (S) new BaseWindowStatistic(x, mean, stdDev, id);
     }
 
     /**
