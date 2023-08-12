@@ -1,7 +1,6 @@
-package com.github.eugene.kamenev.tsmp4j.algo.mp
+package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx
 
 import com.github.eugene.kamenev.tsmp4j.BaseSpec
-import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics
 
 class MPXSpec extends BaseSpec {
     def 'test moving stats method'() {
@@ -55,14 +54,14 @@ class MPXSpec extends BaseSpec {
 
         when:
         var winSize = 6
-        var stats = new RollingWindowStatistics(winSize, 0, true);
+        var stats = new MPXRollingWindowStatistics(winSize, 1);
         var ts = timeSeries;
         var result = new double[2][ts.length - winSize + 1];
         for (var i = 0, k = 0; i < ts.length; i++) {
             var s = stats.apply(ts[i]);
             if (stats.isReady()) {
-                result[0][k] = s.meanX();
-                result[1][k++] = s.invStdDev();
+                result[0][k] = s.mean();
+                result[1][k++] = s.stdDev();
             }
         }
 
@@ -103,7 +102,7 @@ class MPXSpec extends BaseSpec {
         var mpi = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
         when:
-        var algo = new MPX(timeSeries.length, 6, false);
+        var algo = new MPX(6, timeSeries.length, false);
         Arrays.stream(timeSeries).forEach(algo::update);
         var mpx = algo.get(query)
 
@@ -118,7 +117,7 @@ class MPXSpec extends BaseSpec {
         var mpi = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
         when:
-        var algo = new MPX(timeSeries.length, 6, true);
+        var algo = new MPX(6, timeSeries.length, true);
         Arrays.stream(timeSeries).forEach(algo::update);
         var mpx = algo.get(query)
 

@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package com.github.eugene.kamenev.tsmp4j.algo.mp;
+package com.github.eugene.kamenev.tsmp4j.algo.mp.mass;
 
-import com.github.eugene.kamenev.tsmp4j.stats.Stats;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction;
+import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.Arrays;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
@@ -28,23 +29,24 @@ import org.apache.commons.math3.transform.TransformType;
  * Time Series Subsequences under Euclidean Distance and Correlation Coefficient. Reference: <a
  * href="https://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html">FastestSimilaritySearch.html</a>
  */
-public class MASS2 implements DistanceProfileFunction {
+public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction<S> {
 
     @Override
-    public double[] apply(DistanceProfileQuery dsq) {
+    public double[] apply(DistanceProfileQuery<S> dsq) {
         var n = dsq.ts().getStatsBuffer().getLength();
         var m = dsq.windowSize();
-        var meanB = dsq.query().getMean(dsq.queryIndex());
-        var stdDevB = dsq.query().getStdDev(dsq.queryIndex());
+        var qIndex = dsq.queryIndex();
+        var meanB = dsq.query().mean(qIndex);
+        var stdDevB = dsq.query().stdDev(qIndex);
         var query = dsq.query().getStatsBuffer()
             .toStreamReversed()
             .skip(dsq.query().getStatsBuffer().getLength() - (dsq.windowSize() + dsq.queryIndex()))
             .limit(dsq.windowSize())
-            .mapToDouble(Stats::x)
+            .mapToDouble(WindowStatistic::x)
             .toArray();
         var ts = dsq.ts().getStatsBuffer()
             .toStream()
-            .mapToDouble(Stats::x)
+            .mapToDouble(WindowStatistic::x)
             .toArray();
         int padSize = (int) Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
         if (padSize > n) {
@@ -72,8 +74,8 @@ public class MASS2 implements DistanceProfileFunction {
         var dist = new double[n - m + 1];
         var shift = m - 1;
         for (var i = shift; i < n; i++) {
-            var meanA = dsq.ts().getMean(i - shift);
-            var stdDevA = dsq.ts().getStdDev(i - shift);
+            var meanA = dsq.ts().mean(i - shift);
+            var stdDevA = dsq.ts().stdDev(i - shift);
             var d = 2 * (m - (z[i] - m * meanA * meanB) / (stdDevA * stdDevB));
             dist[i - m + 1] = d > 0 ? Math.sqrt(d) : 0;
         }

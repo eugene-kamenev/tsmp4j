@@ -17,9 +17,10 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp;
 
+import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.function.Supplier;
 
-public interface MatrixProfileAlgorithm extends Supplier<MatrixProfile> {
+public interface MatrixProfileAlgorithm<S extends WindowStatistic> extends Supplier<MatrixProfile> {
 
     void update(double value);
 

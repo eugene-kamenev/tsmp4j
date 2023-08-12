@@ -17,28 +17,10 @@
 
 package com.github.eugene.kamenev.tsmp4j.stats;
 
-import com.github.eugene.kamenev.tsmp4j.utils.Buffer;
-import java.util.function.DoubleFunction;
-
-public interface RollingWindowStatistics<S extends WindowStatistic> extends DoubleFunction<S> {
-    double x(int i);
-
-    double mean(int i);
-
-    double stdDev(int i);
-
-    boolean isReady();
-
-    default int windowSize() {
-        return this.getDataBuffer().getLength();
-    }
-
-    default int dataSize() {
-        return this.getStatsBuffer().getLength();
-    }
-
-    Buffer.ObjBuffer<S> getStatsBuffer();
-
-    Buffer.DoubleBuffer getDataBuffer();
+public interface WindowStatistic {
+    double x();
+    double mean();
+    double stdDev();
+    long id();
 
 }

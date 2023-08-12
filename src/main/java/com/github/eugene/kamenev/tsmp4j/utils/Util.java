@@ -19,6 +19,13 @@ package com.github.eugene.kamenev.tsmp4j.utils;
 
 public class Util {
 
+    public static double sanitizeValue(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            return 0.0;
+        }
+        return value;
+    }
+
     public static int[] createRange(int start, int end, int step) {
         // Create the range of integers in the specified interval and step
         int length = (end - start) / step + 1;

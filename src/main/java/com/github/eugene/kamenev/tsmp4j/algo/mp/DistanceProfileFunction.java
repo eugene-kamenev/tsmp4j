@@ -18,17 +18,29 @@
 package com.github.eugene.kamenev.tsmp4j.algo.mp;
 
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
+import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.function.Function;
 
-public interface DistanceProfileFunction
-    extends Function<DistanceProfileFunction.DistanceProfileQuery, double[]> {
+public interface DistanceProfileFunction<S extends WindowStatistic>
+    extends Function<DistanceProfileFunction.DistanceProfileQuery<S>, double[]> {
 
-    public record DistanceProfileQuery(
-        RollingWindowStatistics ts,
-        RollingWindowStatistics query,
+    public record DistanceProfileQuery<S extends WindowStatistic>(
+        RollingWindowStatistics<S> ts,
+        RollingWindowStatistics<S> query,
         int queryIndex,
         int windowSize) {
 
+        public DistanceProfileQuery(
+            RollingWindowStatistics<S> ts,
+            RollingWindowStatistics<S> query, int windowSize) {
+            this(ts, query, 0, windowSize);
+        }
+
+        public DistanceProfileQuery(
+            RollingWindowStatistics<S> ts,
+            RollingWindowStatistics<S> query) {
+            this(ts, query, query.windowSize());
+        }
     }
 
 }

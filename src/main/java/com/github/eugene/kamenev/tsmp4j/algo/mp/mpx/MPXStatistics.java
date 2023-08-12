@@ -15,22 +15,12 @@
  * limitations under the License.
  */
 
-package com.github.eugene.kamenev.tsmp4j.stats;
+package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx;
 
-public record Stats(double x, double meanX, double varianceSum, double sampleStdDev,
-                    double populationStdDev, double invStdDev, long id) {
+import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 
-    @Override
-    public String toString() {
-        return new StringBuilder()
-            .append("{id=").append(id)
-            .append(", x=").append(x)
-            .append(", meanX=").append(meanX)
-            .append(", varianceSum=").append(varianceSum)
-            .append(", sampleStdDev=").append(sampleStdDev)
-            .append(", populationStdDev=").append(populationStdDev)
-            .append(", invStdDev=").append(invStdDev)
-            .append("}")
-            .toString();
-    }
+public record MPXStatistics(double x, double mean, double stdDev, long id,
+                            double df, double dg)
+    implements WindowStatistic {
+
 }

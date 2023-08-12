@@ -17,8 +17,10 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.pmp;
 
-import com.github.eugene.kamenev.tsmp4j.algo.mp.MPX;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.MatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.MatrixProfileAlgorithm;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.mpx.MPX;
+import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +30,7 @@ import java.util.List;
  * computing the matrix profile for a set of window sizes. Reference: <a
  * href="https://sites.google.com/view/pan-matrix-profile/home">SKIMP</a>
  */
-public class SKIMP implements PanMatrixProfileAlgorithm {
+public class SKIMP<S extends WindowStatistic> implements PanMatrixProfileAlgorithm<S> {
 
     private final int[] windows;
 
@@ -41,7 +43,7 @@ public class SKIMP implements PanMatrixProfileAlgorithm {
         this.windows = windows;
         this.algos = new MatrixProfileAlgorithm[windows.length];
         for (int i = 0; i < windows.length; i++) {
-            algos[i] = new MPX(numInstances, windows[i], crossCorrelation);
+            algos[i] = new MPX(windows[i], numInstances, crossCorrelation);
         }
     }
 
@@ -61,7 +63,7 @@ public class SKIMP implements PanMatrixProfileAlgorithm {
         int[][] pmpi = new int[windows.length][];
         int[] idx = new int[windows.length];
         for (int splitIDXVal : splitIDX) {
-            var mp = algos[splitIDXVal].get();
+            var mp = (MatrixProfile) algos[splitIDXVal].get();
             var dist = mp.profile();
             var idxs = mp.indexes();
 
@@ -83,7 +85,7 @@ public class SKIMP implements PanMatrixProfileAlgorithm {
     }
 
     public static PanMatrixProfile of(double[] ts, int[] windows, boolean crossCorrelation) {
-        var skimp = new SKIMP(ts.length, crossCorrelation, windows);
+        var skimp = new SKIMP<>(ts.length, crossCorrelation, windows);
         Arrays.stream(ts)
             .forEach(skimp::update);
         return skimp.get();

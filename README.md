@@ -3,7 +3,7 @@
 This repository contains Matrix Profile algorithms implemented in Java.
 It is an attempt to port algorithms presented
 in [tsmp](https://github.com/matrix-profile-foundation/tsmp)
-and [stumpy](https://github.com/matrix-profile-foundation/tsmp).
+and [stumpy](https://github.com/TDAmeritrade/stumpy).
 
 [The Matrix Profile](https://www.cs.ucr.edu/~eamonn/MatrixProfile.html), has the potential to
 revolutionize time series data mining because of its generality,
@@ -16,8 +16,8 @@ This library includes the following algorithms:
 
 1. [STAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/STAMP.java)
 2. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java)
-3. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/MPX.java)
-4. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/MASS2.java)
+3. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java)
+4. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java)
 
 More algorithms will be added in the future.
 
@@ -37,7 +37,7 @@ stream.forEach(stamp::update); // it keeps statistics updated, not the matrix pr
 var matrixProfile = stamp.get(); // execute MP algorithm for statistics collected
 ```
 
-### Batch case
+### Single batch case
 ```java
 double[] data = ... // your data
 var w = 10; // window for MP algorithm    

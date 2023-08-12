@@ -1,7 +1,8 @@
-package com.github.eugene.kamenev.tsmp4j.algo.mp
+package com.github.eugene.kamenev.tsmp4j.algo.mp.mass
 
 import com.github.eugene.kamenev.tsmp4j.BaseSpec
-import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics
+import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction
+import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics
 
 class MASS2Spec extends BaseSpec {
 
@@ -34,15 +35,15 @@ class MASS2Spec extends BaseSpec {
                 3.396909990444282, 4.313077021928001, 4.804077187095176, 3.5059890582542703}
 
         when:
-        var ts = new RollingWindowStatistics(query.length, timeSeries.length, false)
-        var qts = new RollingWindowStatistics(query.length, query.length, false)
+        var ts = new BaseRollingWindowStatistics(query.length, timeSeries.length)
+        var qts = new BaseRollingWindowStatistics(query.length, query.length)
         for (var i = 0; i < timeSeries.length; i++) {
             ts.apply(timeSeries[i])
         }
         for (var i = 0; i < query.length; i++) {
             qts.apply(query[i])
         }
-        var query = new DistanceProfileFunction.DistanceProfileQuery(ts, qts, 0, 6)
+        var query = new DistanceProfileFunction.DistanceProfileQuery(ts, qts, 6)
         var dist = new MASS2().apply(query)
 
         then:
