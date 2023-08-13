@@ -34,10 +34,11 @@ public class SKIMP<S extends WindowStatistic> implements PanMatrixProfileAlgorit
 
     private final int[] windows;
 
-    private final MatrixProfileAlgorithm[] algos;
+    private final MatrixProfileAlgorithm<? extends WindowStatistic, ? extends MatrixProfile>[] algos;
 
     private final int[] splitIDX;
 
+    @SuppressWarnings("unchecked")
     public SKIMP(int numInstances, boolean crossCorrelation, int... windows) {
         this.splitIDX = binarySplit(windows.length);
         this.windows = windows;
@@ -47,10 +48,17 @@ public class SKIMP<S extends WindowStatistic> implements PanMatrixProfileAlgorit
         }
     }
 
+    public <M extends MatrixProfile> SKIMP(int[] windows,
+        MatrixProfileAlgorithm<S, M>[] algos) {
+        this.splitIDX = binarySplit(windows.length);
+        this.windows = windows;
+        this.algos = algos;
+    }
+
     @Override
     public void update(double value) {
-        for (int i = 0; i < windows.length; i++) {
-            algos[i].update(value);
+        for (var algo : algos) {
+            algo.update(value);
         }
     }
 
@@ -63,7 +71,7 @@ public class SKIMP<S extends WindowStatistic> implements PanMatrixProfileAlgorit
         int[][] pmpi = new int[windows.length][];
         int[] idx = new int[windows.length];
         for (int splitIDXVal : splitIDX) {
-            var mp = (MatrixProfile) algos[splitIDXVal].get();
+            var mp = algos[splitIDXVal].get();
             var dist = mp.profile();
             var idxs = mp.indexes();
 
@@ -86,6 +94,15 @@ public class SKIMP<S extends WindowStatistic> implements PanMatrixProfileAlgorit
 
     public static PanMatrixProfile of(double[] ts, int[] windows, boolean crossCorrelation) {
         var skimp = new SKIMP<>(ts.length, crossCorrelation, windows);
+        Arrays.stream(ts)
+            .forEach(skimp::update);
+        return skimp.get();
+    }
+
+    public static <S extends WindowStatistic, M extends MatrixProfile> PanMatrixProfile of(
+        double[] ts, int[] windows, MatrixProfileAlgorithm<S, M>[] algos) {
+
+        var skimp = new SKIMP<>(windows, algos);
         Arrays.stream(ts)
             .forEach(skimp::update);
         return skimp.get();

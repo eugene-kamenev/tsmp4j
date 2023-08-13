@@ -20,8 +20,8 @@ package com.github.eugene.kamenev.tsmp4j.algo.mp;
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 
-public abstract class BaseMatrixProfileAlgorithm<S extends WindowStatistic>
-    implements MatrixProfileAlgorithm<S> {
+public abstract class BaseMatrixProfileAlgorithm<S extends WindowStatistic,
+    M extends MatrixProfile> implements MatrixProfileAlgorithm<S, M> {
 
     protected final RollingWindowStatistics<S> rollingStatistics;
 

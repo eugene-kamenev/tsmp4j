@@ -1,4 +1,4 @@
-package com.github.eugene.kamenev.tsmp4j.algo.mp
+package com.github.eugene.kamenev.tsmp4j.algo.mp.stamp
 
 import com.github.eugene.kamenev.tsmp4j.BaseSpec
 

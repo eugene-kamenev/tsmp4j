@@ -17,6 +17,12 @@
 
 package com.github.eugene.kamenev.tsmp4j.utils;
 
+import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
+
 public class Util {
 
     public static double sanitizeValue(double value) {
@@ -24,6 +30,10 @@ public class Util {
             return 0.0;
         }
         return value;
+    }
+
+    public static int padSize(int n) {
+        return (int) Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
     }
 
     public static int[] createRange(int start, int end, int step) {
@@ -34,5 +44,30 @@ public class Util {
             range[i] = start + i * step;
         }
         return range;
+    }
+
+    public static Complex[] forwardFft(
+        RollingWindowStatistics<?> data,
+        boolean isQuery, int skip, int padSize) {
+        double[] padded = new double[padSize];
+        int[] k = new int[1];
+        if (isQuery) {
+            data.getStatsBuffer()
+                .toStreamReversed()
+                .skip(skip)
+                .limit(data.windowSize())
+                .forEach(s -> padded[k[0]++] = s.x());
+        } else {
+            data.getStatsBuffer()
+                .toStream()
+                .forEach(s -> padded[k[0]++] = s.x());
+        }
+        var transformer = new FastFourierTransformer(DftNormalization.STANDARD);
+        return transformer.transform(padded, TransformType.FORWARD);
+    }
+
+    public static Complex[] inverseFft(Complex[] data) {
+        var transformer = new FastFourierTransformer(DftNormalization.STANDARD);
+        return transformer.transform(data, TransformType.INVERSE);
     }
 }

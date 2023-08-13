@@ -17,16 +17,8 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp;
 
-import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
-import java.util.function.Supplier;
-
-public interface MatrixProfileAlgorithm<S extends WindowStatistic, M extends MatrixProfile>
-    extends Supplier<M> {
-
-    void update(double value);
-
-    M get(double[] query);
-
-    boolean isReady();
+public record BaseMatrixProfile(
+    double[] profile,
+    int[] indexes) implements MatrixProfile {
 
 }

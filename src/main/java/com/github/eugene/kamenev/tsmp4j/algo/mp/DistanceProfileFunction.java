@@ -24,8 +24,8 @@ import java.util.function.Function;
 public interface DistanceProfileFunction<S extends WindowStatistic>
     extends Function<DistanceProfileFunction.DistanceProfileQuery<S>, double[]> {
 
-    public record DistanceProfileQuery<S extends WindowStatistic>(
-        RollingWindowStatistics<S> ts,
+    record DistanceProfileQuery<S extends WindowStatistic>(
+        RollingWindowStatistics<S> data,
         RollingWindowStatistics<S> query,
         int queryIndex,
         int windowSize) {
