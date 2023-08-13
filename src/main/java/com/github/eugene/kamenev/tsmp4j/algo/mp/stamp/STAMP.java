@@ -15,14 +15,19 @@
  * limitations under the License.
  */
 
-package com.github.eugene.kamenev.tsmp4j.algo.mp;
+package com.github.eugene.kamenev.tsmp4j.algo.mp.stamp;
 
+import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfile;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfileAlgorithm;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction.DistanceProfileQuery;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.mass.MASS2;
 import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.BaseWindowStatistic;
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 /**
  * STAMP: Streaming Time series Anytime Matrix Profile Reference: Yeh CCM, Zhu Y, Ulanova L, Begum
@@ -33,17 +38,21 @@ import java.util.Arrays;
  * Reference Website: <a
  * href="http://www.cs.ucr.edu/~eamonn/MatrixProfile.html">MatrixProfile.html</a>
  */
-public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
+public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, BaseMatrixProfile> {
 
-    private final DistanceProfileFunction<BaseWindowStatistic> distanceProfileFunction;
+    /**
+     * Distance profile function Since the distance profile function is stateful, we need to provide
+     * a supplier
+     */
+    private final Supplier<DistanceProfileFunction<BaseWindowStatistic>> distanceProfileFunction;
 
     public STAMP(int minInstances, int windowSize) {
         super(new BaseRollingWindowStatistics<>(windowSize, minInstances));
-        this.distanceProfileFunction = new MASS2<>();
+        this.distanceProfileFunction = MASS2::new;
     }
 
     @Override
-    public MatrixProfile get(double[] query) {
+    public BaseMatrixProfile get(double[] query) {
         if (this.isReady()) {
             var qs = new BaseRollingWindowStatistics<>(query.length,
                 new BaseWindowStatistic[query.length]);
@@ -51,22 +60,22 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
                 qs.apply(v);
             }
             return stamp(qs, this.rollingStatistics, this.rollingStatistics.windowSize(),
-                this.distanceProfileFunction);
+                this.distanceProfileFunction.get());
         }
         return null;
     }
 
     @Override
-    public MatrixProfile get() {
+    public BaseMatrixProfile get() {
         if (this.isReady()) {
             return stamp(this.rollingStatistics, this.rollingStatistics.windowSize(),
-                this.distanceProfileFunction);
+                this.distanceProfileFunction.get());
         }
         return null;
     }
 
-    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> tsA,
-        int window, int w,
+    public static <S extends WindowStatistic> BaseMatrixProfile stamp(
+        RollingWindowStatistics<S> tsA, int window, int w,
         RollingWindowStatistics<S> tsB, boolean trivialMatch, DistanceProfileFunction<S> ds) {
         var n = tsA.getStatsBuffer().getLength();
         var matrixProfile = new double[n - window + 1];
@@ -79,7 +88,7 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
 
         var index = 0;
         while (index < w) {
-            var dsq = new DistanceProfileFunction.DistanceProfileQuery<>(tsA, tsB, index, window);
+            var dsq = new DistanceProfileQuery<>(tsA, tsB, index, window);
             distanceProfile = ds.apply(dsq);
             distanceProfileIndex = getDistanceProfileIndex(n, index, window);
 
@@ -100,10 +109,10 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
             index++;
         }
 
-        return new MatrixProfile(matrixProfile, matrixProfileIndex);
+        return new BaseMatrixProfile(matrixProfile, matrixProfileIndex);
     }
 
-    public static MatrixProfile of(double[] ts, double[] query) {
+    public static BaseMatrixProfile of(double[] ts, double[] query) {
         var tsStats = new BaseRollingWindowStatistics<>(ts.length, ts.length);
         for (double v : ts) {
             tsStats.apply(v);
@@ -115,7 +124,7 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
         return stamp(tsStats, queryStats, query.length, new MASS2<>());
     }
 
-    public static MatrixProfile of(double[] ts, int window) {
+    public static BaseMatrixProfile of(double[] ts, int window) {
         var tsStats = new BaseRollingWindowStatistics<>(window, ts.length);
         for (double v : ts) {
             tsStats.apply(v);
@@ -123,12 +132,12 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic> {
         return stamp(tsStats, window, new MASS2<>());
     }
 
-    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts,
+    public static <S extends WindowStatistic> BaseMatrixProfile stamp(RollingWindowStatistics<S> ts,
         int window, DistanceProfileFunction<S> ds) {
         return stamp(ts, window, ts.getStatsBuffer().getLength() - window + 1, ts, true, ds);
     }
 
-    public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts,
+    public static <S extends WindowStatistic> BaseMatrixProfile stamp(RollingWindowStatistics<S> ts,
         RollingWindowStatistics<S> query, int window, DistanceProfileFunction<S> ds) {
         return stamp(query, window, ts.getStatsBuffer().getLength() - window + 1, ts, false, ds);
     }

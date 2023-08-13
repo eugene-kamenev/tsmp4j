@@ -17,9 +17,9 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx;
 
+import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfileAlgorithm;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction;
-import com.github.eugene.kamenev.tsmp4j.algo.mp.MatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.Arrays;
@@ -29,8 +29,8 @@ import java.util.Arrays;
  * Reference: <a
  * href="https://github.com/matrix-profile-foundation/tsmp/blob/master/R/mpx.R">mpx.R</a>
  */
-public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements
-    DistanceProfileFunction<MPXStatistics> {
+public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProfile> implements
+    DistanceProfileFunction<MPXStatistic> {
 
     private final boolean crossCorrelation;
 
@@ -41,7 +41,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements
             (int) Math.ceil(windowSize / 4.0), crossCorrelation);
     }
 
-    public MPX(RollingWindowStatistics<MPXStatistics> rollingWindowStatistics,
+    public MPX(RollingWindowStatistics<MPXStatistic> rollingWindowStatistics,
         int minlag, boolean crossCorrelation) {
         super(rollingWindowStatistics);
         this.minlag = minlag;
@@ -49,7 +49,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements
     }
 
     @Override
-    public MatrixProfile get(double[] query) {
+    public BaseMatrixProfile get(double[] query) {
         if (this.isReady()) {
             var qs = new MPXRollingWindowStatistics(query.length, query.length);
             for (double v : query) {
@@ -61,7 +61,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements
     }
 
     @Override
-    public MatrixProfile get() {
+    public BaseMatrixProfile get() {
         if (this.isReady()) {
             var sb = ((MPXRollingWindowStatistics) this.rollingStatistics);
 
@@ -104,33 +104,33 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements
                     mp[i] = Math.sqrt(2.0 * w * (1.0 - mp[i]));
                 }
             }
-            return new MatrixProfile(mp, mpi);
+            return new BaseMatrixProfile(mp, mpi);
         }
         return null;
     }
 
     @Override
-    public double[] apply(DistanceProfileQuery<MPXStatistics> mpxStatisticsDistanceProfileQuery) {
-        return compute(mpxStatisticsDistanceProfileQuery.ts(),
+    public double[] apply(DistanceProfileQuery<MPXStatistic> mpxStatisticsDistanceProfileQuery) {
+        return compute(mpxStatisticsDistanceProfileQuery.data(),
             mpxStatisticsDistanceProfileQuery.query(), this.crossCorrelation).profile();
     }
 
-    public static MatrixProfile of(double[] ts, int windowSize, boolean crossCorrelation) {
+    public static BaseMatrixProfile of(double[] ts, int windowSize, boolean crossCorrelation) {
         var mpx = new MPX(windowSize, ts.length, crossCorrelation);
         Arrays.stream(ts)
             .forEach(mpx::update);
         return mpx.get();
     }
 
-    public static MatrixProfile of(double[] ts, int windowSize) {
+    public static BaseMatrixProfile of(double[] ts, int windowSize) {
         var mpx = new MPX(windowSize, ts.length, false);
         Arrays.stream(ts)
             .forEach(mpx::update);
         return mpx.get();
     }
 
-    private static MatrixProfile compute(RollingWindowStatistics<MPXStatistics> ts,
-        RollingWindowStatistics<MPXStatistics> qs, boolean crossCorrelation) {
+    private static BaseMatrixProfile compute(RollingWindowStatistics<MPXStatistic> ts,
+        RollingWindowStatistics<MPXStatistic> qs, boolean crossCorrelation) {
 
         int n = ts.dataSize();
         int qn = qs.dataSize();
@@ -155,7 +155,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistics> implements
         postProcess(mp, w, crossCorrelation);
         postProcess(mpb, w, crossCorrelation);
 
-        return new MatrixProfile(mp, mpi);
+        return new BaseMatrixProfile(mp, mpi);
     }
 
     private static <S extends WindowStatistic> void computeJoin(RollingWindowStatistics<S> ts,

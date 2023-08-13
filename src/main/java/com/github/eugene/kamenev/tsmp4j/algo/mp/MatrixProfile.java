@@ -17,6 +17,10 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp;
 
-public record MatrixProfile(double[] profile, int[] indexes) {
+public interface MatrixProfile {
+
+    double[] profile();
+
+    int[] indexes();
 
 }

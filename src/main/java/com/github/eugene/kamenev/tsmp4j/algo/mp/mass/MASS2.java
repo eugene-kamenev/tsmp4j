@@ -19,10 +19,8 @@ package com.github.eugene.kamenev.tsmp4j.algo.mp.mass;
 
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
-import java.util.Arrays;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.TransformType;
+import com.github.eugene.kamenev.tsmp4j.utils.Util;
+import org.apache.commons.math3.complex.Complex;
 
 /**
  * MASS_V2 Mueen's Algorithm for Similarity Search is The Fastest Similarity Search Algorithm for
@@ -31,41 +29,31 @@ import org.apache.commons.math3.transform.TransformType;
  */
 public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction<S> {
 
+    /**
+     * It has a state now to avoid double computation of FFT,
+     *
+     * @TODO: find better place for this state, better to have this function stateless
+     */
+    private Complex[] dataFft;
+
     @Override
     public double[] apply(DistanceProfileQuery<S> dsq) {
-        var n = dsq.ts().getStatsBuffer().getLength();
+        var n = dsq.data().dataSize();
         var m = dsq.windowSize();
         var qIndex = dsq.queryIndex();
         var meanB = dsq.query().mean(qIndex);
         var stdDevB = dsq.query().stdDev(qIndex);
-        var query = dsq.query().getStatsBuffer()
-            .toStreamReversed()
-            .skip(dsq.query().getStatsBuffer().getLength() - (dsq.windowSize() + dsq.queryIndex()))
-            .limit(dsq.windowSize())
-            .mapToDouble(WindowStatistic::x)
-            .toArray();
-        var ts = dsq.ts().getStatsBuffer()
-            .toStream()
-            .mapToDouble(WindowStatistic::x)
-            .toArray();
-        int padSize = (int) Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
-        if (padSize > n) {
-            ts = Arrays.copyOf(ts, padSize);
+        if (this.dataFft == null) {
+            int padSize = Util.padSize(n);
+            this.dataFft = Util.forwardFft(dsq.data(), false, 0, padSize);
         }
-        if (n - m > 0 || m < padSize) {
-            double[] paddedArray = new double[padSize];
-            System.arraycopy(query, 0, paddedArray, 0, query.length);
-            query = paddedArray;
-        }
-
-        var transformer = new FastFourierTransformer(DftNormalization.STANDARD);
-        var tsFft = transformer.transform(ts, TransformType.FORWARD);
-        var queryFft = transformer.transform(query, TransformType.FORWARD);
-        var prod = new org.apache.commons.math3.complex.Complex[queryFft.length];
+        var skip = dsq.query().dataSize() - (m + qIndex);
+        var queryFft = Util.forwardFft(dsq.query(), true, skip, this.dataFft.length);
+        var prod = new Complex[queryFft.length];
         for (int i = 0; i < queryFft.length; i++) {
-            prod[i] = queryFft[i].multiply(tsFft[i]);
+            prod[i] = queryFft[i].multiply(this.dataFft[i]);
         }
-        var inv = transformer.transform(prod, TransformType.INVERSE);
+        var inv = Util.inverseFft(prod);
         double[] z = new double[inv.length];
         for (int i = 0; i < inv.length; i++) {
             z[i] = inv[i].getReal();
@@ -74,8 +62,8 @@ public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction
         var dist = new double[n - m + 1];
         var shift = m - 1;
         for (var i = shift; i < n; i++) {
-            var meanA = dsq.ts().mean(i - shift);
-            var stdDevA = dsq.ts().stdDev(i - shift);
+            var meanA = dsq.data().mean(i - shift);
+            var stdDevA = dsq.data().stdDev(i - shift);
             var d = 2 * (m - (z[i] - m * meanA * meanB) / (stdDevA * stdDevB));
             dist[i - m + 1] = d > 0 ? Math.sqrt(d) : 0;
         }

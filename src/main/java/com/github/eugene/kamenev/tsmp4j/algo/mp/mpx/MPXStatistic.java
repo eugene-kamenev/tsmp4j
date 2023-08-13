@@ -19,8 +19,8 @@ package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx;
 
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 
-public record MPXStatistics(double x, double mean, double stdDev, long id,
-                            double df, double dg)
+public record MPXStatistic(double x, double mean, double stdDev, long id,
+                           double df, double dg)
     implements WindowStatistic {
 
 }
