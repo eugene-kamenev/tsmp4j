@@ -14,7 +14,7 @@ discovery, clustering etc.
 
 This library includes the following algorithms:
 
-1. [STAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/STAMP.java)
+1. [STAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stamp/STAMP.java)
 2. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java)
 3. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java)
 4. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java)

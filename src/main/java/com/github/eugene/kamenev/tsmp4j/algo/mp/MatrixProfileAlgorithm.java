@@ -17,16 +17,37 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp;
 
+import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics;
+import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.function.Supplier;
 
 public interface MatrixProfileAlgorithm<S extends WindowStatistic, M extends MatrixProfile>
     extends Supplier<M> {
 
-    void update(double value);
+    default void update(double value) {
+        this.rollingStatistics().apply(value);
+    }
 
-    M get(double[] query);
+    default boolean isReady() {
+        return this.rollingStatistics().getStatsBuffer().isFull();
+    }
 
-    boolean isReady();
+    @SuppressWarnings("unchecked")
+    default M get(double[] query) {
+        if (this.isReady()) {
+            var qs = new BaseRollingWindowStatistics<>(this.rollingStatistics().windowSize(),
+                query.length);
+            for (double v : query) {
+                qs.apply(v);
+            }
+            return this.get((RollingWindowStatistics<S>) qs);
+        }
+        return null;
+    }
+
+    M get(RollingWindowStatistics<S> query);
+
+    RollingWindowStatistics<S> rollingStatistics();
 
 }

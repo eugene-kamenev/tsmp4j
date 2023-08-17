@@ -15,25 +15,28 @@
  * limitations under the License.
  */
 
-package com.github.eugene.kamenev.tsmp4j.algo.mp;
+package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx;
 
-public class BaseMatrixProfile implements MatrixProfile {
+import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfile;
 
-    private final double[] profile;
-    private final int[] indexes;
+public class MPXABBAJoinMatrixProfile extends BaseMatrixProfile {
 
-    public BaseMatrixProfile(double[] profile, int[] indexes) {
-        this.profile = profile;
-        this.indexes = indexes;
+    private final double[] profileB;
+
+    private final int[] indexesB;
+
+    public MPXABBAJoinMatrixProfile(double[] profile, int[] indexes,
+        double[] profileB, int[] indexesB) {
+        super(profile, indexes);
+        this.profileB = profileB;
+        this.indexesB = indexesB;
     }
 
-    @Override
-    public double[] profile() {
-        return this.profile;
+    public double[] profileB() {
+        return this.profileB;
     }
 
-    @Override
-    public int[] indexes() {
-        return this.indexes;
+    public int[] indexesB() {
+        return this.indexesB;
     }
 }

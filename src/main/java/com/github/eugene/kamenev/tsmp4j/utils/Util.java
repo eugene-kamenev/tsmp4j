@@ -18,12 +18,33 @@
 package com.github.eugene.kamenev.tsmp4j.utils;
 
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
+import java.util.Arrays;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 
 public class Util {
+
+    public static double calMpDist(double[] mp, double thr, int data_size) {
+        int k = ((int) Math.ceil(thr * data_size));
+        Arrays.sort(mp);
+        if (mp.length > k) {
+            return mp[k - 1];
+        } else {
+            return mp[mp.length - 1];
+        }
+    }
+
+    public static double maxValue(double[] arr) {
+        double maxVal = Double.MIN_VALUE;
+        for (double val : arr) {
+            if (val > maxVal) {
+                maxVal = val;
+            }
+        }
+        return maxVal;
+    }
 
     public static double sanitizeValue(double value) {
         if (Double.isNaN(value) || Double.isInfinite(value)) {

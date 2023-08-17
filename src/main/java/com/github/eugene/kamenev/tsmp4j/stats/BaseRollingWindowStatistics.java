@@ -92,31 +92,6 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
         return Util.sanitizeValue(stdDev);
     }
 
-    protected int shiftIndex(int i) {
-        return i + this.getDataBuffer().getLength() - 1;
-    }
-
-    /**
-     * Checks if the buffer is full.
-     *
-     * @return True if the buffer is full, otherwise false.
-     */
-    public boolean isReady() {
-        return this.getDataBuffer().isFull();
-    }
-
-    public double mean(int i) {
-        return this.getStatsBuffer().get(shiftIndex(i)).mean();
-    }
-
-    public double stdDev(int i) {
-        return this.getStatsBuffer().get(shiftIndex(i)).stdDev();
-    }
-
-    public double x(int i) {
-        return this.getStatsBuffer().get(i).x();
-    }
-
     @Override
     public DoubleBuffer getDataBuffer() {
         return this.dataBuffer;

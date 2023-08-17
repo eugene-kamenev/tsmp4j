@@ -17,6 +17,8 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx;
 
+import static com.github.eugene.kamenev.tsmp4j.utils.Util.calMpDist;
+
 import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfileAlgorithm;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction;
@@ -36,9 +38,20 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
 
     private final int minlag;
 
+    private final double threshold = 0.05;
+
     public MPX(int windowSize, int bufferSize, boolean crossCorrelation) {
         this(new MPXRollingWindowStatistics(windowSize, bufferSize),
-            (int) Math.ceil(windowSize / 4.0), crossCorrelation);
+            (int) Math.floor(windowSize / 2.0), crossCorrelation);
+    }
+
+    public MPX(RollingWindowStatistics<MPXStatistic> rollingWindowStatistics) {
+        this(rollingWindowStatistics, (int) Math.floor(rollingWindowStatistics.windowSize() / 2.0),
+            false);
+    }
+
+    public MPX() {
+        this(null, 0, false);
     }
 
     public MPX(RollingWindowStatistics<MPXStatistic> rollingWindowStatistics,
@@ -51,11 +64,20 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     @Override
     public BaseMatrixProfile get(double[] query) {
         if (this.isReady()) {
-            var qs = new MPXRollingWindowStatistics(query.length, query.length);
+            var qs = new MPXRollingWindowStatistics(this.rollingStatistics().windowSize(),
+                query.length);
             for (double v : query) {
                 qs.apply(v);
             }
-            return compute(this.rollingStatistics, qs, crossCorrelation);
+            return compute(this.rollingStatistics(), qs, crossCorrelation);
+        }
+        return null;
+    }
+
+    @Override
+    public BaseMatrixProfile get(RollingWindowStatistics<MPXStatistic> query) {
+        if (isReady()) {
+            return compute(this.rollingStatistics(), query, crossCorrelation);
         }
         return null;
     }
@@ -63,26 +85,24 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     @Override
     public BaseMatrixProfile get() {
         if (this.isReady()) {
-            var sb = ((MPXRollingWindowStatistics) this.rollingStatistics);
+            var sb = ((MPXRollingWindowStatistics) this.rollingStatistics());
 
             int n = sb.dataSize();
             int w = sb.windowSize();
             int profile_len = n - w + 1;
-            int diag, offset, col;
-            double c, c_cmp;
 
             double[] mp = new double[profile_len];
             int[] mpi = new int[profile_len];
 
-            for (diag = this.minlag + 1; diag < profile_len; diag++) {
-                c = 0;
-                for (int i = diag, j = 0; j < w; i++, j++) {
-                    c += (sb.x(i) - sb.mean(diag)) * (sb.x(i - diag) - sb.mean(0));
+            for (var diag = this.minlag; diag < profile_len; diag++) {
+                var c = 0.0;
+                for (int k = 0; k < w; k++) {
+                    c += (sb.x(diag + k) - sb.mean(diag)) * (sb.x(k) - sb.mean(0));
                 }
-                for (offset = 0; offset < n - w - diag + 1; offset++) {
-                    col = offset + diag;
-                    c += sb.df(offset) * sb.dg(col) + sb.df(col) * sb.dg(offset);
-                    c_cmp = c * sb.stdDev(offset) * sb.stdDev(col);
+                for (var offset = 0; offset < n - w - diag + 1; offset++) {
+                    var col = offset + diag;
+                    c = c + sb.df(offset) * sb.dg(col) + sb.df(col) * sb.dg(offset);
+                    var c_cmp = c * sb.stdDev(offset) * sb.stdDev(col);
 
                     if (c_cmp > mp[offset]) {
                         mp[offset] = c_cmp;
@@ -110,9 +130,17 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     }
 
     @Override
-    public double[] apply(DistanceProfileQuery<MPXStatistic> mpxStatisticsDistanceProfileQuery) {
-        return compute(mpxStatisticsDistanceProfileQuery.data(),
-            mpxStatisticsDistanceProfileQuery.query(), this.crossCorrelation).profile();
+    public double[] apply(DistanceProfileQuery<MPXStatistic> dsq) {
+        var d = dsq.data().dataSize() < dsq.query().dataSize() ? dsq.query() : dsq.data();
+        var q = dsq.data() == d ? dsq.query() : dsq.data();
+        var mpx = new MPX(d);
+        var mp = (MPXABBAJoinMatrixProfile) mpx.get(q);
+        var merged = new double[mp.profile().length + mp.profileB().length];
+        System.arraycopy(mp.profileB(), 0, merged, 0, mp.profileB().length);
+        System.arraycopy(mp.profile(), 0, merged, mp.profileB().length, mp.profile().length);
+        return new double[]{
+            calMpDist(merged, this.threshold, d.dataSize() + q.dataSize())
+        };
     }
 
     public static BaseMatrixProfile of(double[] ts, int windowSize, boolean crossCorrelation) {
@@ -148,47 +176,45 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
         Arrays.fill(mpb, -1.0);
 
         // AB Join
-        computeJoin(ts, qs, w, mp, mpi, mpb, mpib);
+        computeJoin(ts, qs, mp, mpi, mpb, mpib, w);
         // BA Join
-        computeJoin(qs, ts, w, mpb, mpib, mp, mpi);
+        computeJoin(qs, ts, mpb, mpib, mp, mpi, w);
 
         postProcess(mp, w, crossCorrelation);
         postProcess(mpb, w, crossCorrelation);
 
-        return new BaseMatrixProfile(mp, mpi);
+        return new MPXABBAJoinMatrixProfile(mp, mpi, mpb, mpib);
     }
 
-    private static <S extends WindowStatistic> void computeJoin(RollingWindowStatistics<S> ts,
-        RollingWindowStatistics<S> query,
-        int w, double[] mp, int[] mpi, double[] mpb, int[] mpib) {
-        int profile_len = ts.getStatsBuffer().getLength() - w + 1;
-        int profile_lenb = query.getStatsBuffer().getLength() - w + 1;
-        double cov_, corr_;
+    private static <S extends WindowStatistic> void computeJoin(RollingWindowStatistics<S> a,
+        RollingWindowStatistics<S> b,
+        double[] mp, int[] mpi, double[] mpb, int[] mpib, int w) {
+        int amx = a.getStatsBuffer().getLength() - w + 1;
+        int bmx = b.getStatsBuffer().getLength() - w + 1;
 
-        var sa = (MPXRollingWindowStatistics) ts;
-        var sb = (MPXRollingWindowStatistics) query;
+        var sa = (MPXRollingWindowStatistics) a;
+        var sb = (MPXRollingWindowStatistics) b;
 
-        for (int i = 0; i < profile_len; i++) {
-            int mx = Math.min((profile_len - i), profile_lenb);
+        for (int ia = 0; ia < amx; ia++) {
+            int mx = Math.min(amx - ia, bmx);
+            double c = 0;
 
-            cov_ = 0;
-            for (int j = i; j < i + w; j++) {
-                cov_ += ((ts.x(j) - ts.mean(i)) * (query.x(j - i) - query.mean(0)));
+            for (int i = 0; i < w; i++) {
+                c += (a.x(ia + i) - a.mean(ia)) * (b.x(i) - b.mean(0));
             }
 
-            for (int j = 0; j < mx; j++) {
-                int k = j + i;
-                cov_ += sa.df(k) * sb.dg(j) + sa.dg(k) * sb.df(j);
-                corr_ = cov_ * ts.stdDev(k) * query.stdDev(j);
+            for (int ib = 0; ib < mx; ib++) {
+                c += sa.df(ib + ia) * sb.dg(ib) + sa.dg(ib + ia) * sb.df(ib);
+                double c_cmp = c * a.stdDev(ib + ia) * b.stdDev(ib);
 
-                if (corr_ > mp[k]) {
-                    mp[k] = corr_;
-                    mpi[k] = j;
+                if (c_cmp > mp[ib + ia]) {
+                    mp[ib + ia] = c_cmp;
+                    mpi[ib + ia] = ib;
                 }
 
-                if (corr_ > mpb[j]) {
-                    mpb[j] = corr_;
-                    mpib[j] = k;
+                if (c_cmp > mpb[ib]) {
+                    mpb[ib] = c_cmp;
+                    mpib[ib] = ia + ib;
                 }
             }
         }
@@ -201,11 +227,11 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
                 if (mp[i] == -1.0) {
                     mp[i] = Double.POSITIVE_INFINITY;
                 } else {
-                    var value = Math.sqrt(2.0 * w * (1.0 - mp[i]));
-                    if (Double.isNaN(value)) {
+                    var dist = 2.0 * w * (1.0 - mp[i]);
+                    if (dist <= 0) {
                         mp[i] = 0;
                     } else {
-                        mp[i] = value;
+                        mp[i] = Math.sqrt(dist);
                     }
                 }
             } else {
