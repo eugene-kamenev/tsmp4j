@@ -26,6 +26,7 @@ import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.BaseWindowStatistic;
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
+import com.github.eugene.kamenev.tsmp4j.utils.Util;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
@@ -47,19 +48,19 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, BaseM
     private final Supplier<DistanceProfileFunction<BaseWindowStatistic>> distanceProfileFunction;
 
     public STAMP(int minInstances, int windowSize) {
+        this(minInstances, windowSize, MASS2::new);
+    }
+
+    public STAMP(int minInstances, int windowSize,
+        Supplier<DistanceProfileFunction<BaseWindowStatistic>> distFunc) {
         super(new BaseRollingWindowStatistics<>(windowSize, minInstances));
-        this.distanceProfileFunction = MASS2::new;
+        this.distanceProfileFunction = distFunc;
     }
 
     @Override
-    public BaseMatrixProfile get(double[] query) {
+    public BaseMatrixProfile get(RollingWindowStatistics<BaseWindowStatistic> qs) {
         if (this.isReady()) {
-            var qs = new BaseRollingWindowStatistics<>(query.length,
-                new BaseWindowStatistic[query.length]);
-            for (double v : query) {
-                qs.apply(v);
-            }
-            return stamp(qs, this.rollingStatistics, this.rollingStatistics.windowSize(),
+            return stamp(qs, this.rollingStatistics(), this.rollingStatistics().windowSize(),
                 this.distanceProfileFunction.get());
         }
         return null;
@@ -68,7 +69,7 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, BaseM
     @Override
     public BaseMatrixProfile get() {
         if (this.isReady()) {
-            return stamp(this.rollingStatistics, this.rollingStatistics.windowSize(),
+            return stamp(this.rollingStatistics(), this.rollingStatistics().windowSize(),
                 this.distanceProfileFunction.get());
         }
         return null;
@@ -85,10 +86,10 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, BaseM
 
         double[] distanceProfile;
         int[] distanceProfileIndex;
-
+        var fft = Util.forwardFft(tsA, false, 0, Util.padSize(n));
         var index = 0;
         while (index < w) {
-            var dsq = new DistanceProfileQuery<>(tsA, tsB, index, window);
+            var dsq = new DistanceProfileQuery<>(tsA, tsB, index, window, fft);
             distanceProfile = ds.apply(dsq);
             distanceProfileIndex = getDistanceProfileIndex(n, index, window);
 

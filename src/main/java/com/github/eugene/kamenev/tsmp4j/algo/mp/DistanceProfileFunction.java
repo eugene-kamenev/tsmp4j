@@ -20,6 +20,7 @@ package com.github.eugene.kamenev.tsmp4j.algo.mp;
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.function.Function;
+import org.apache.commons.math3.complex.Complex;
 
 public interface DistanceProfileFunction<S extends WindowStatistic>
     extends Function<DistanceProfileFunction.DistanceProfileQuery<S>, double[]> {
@@ -28,12 +29,20 @@ public interface DistanceProfileFunction<S extends WindowStatistic>
         RollingWindowStatistics<S> data,
         RollingWindowStatistics<S> query,
         int queryIndex,
-        int windowSize) {
+        int windowSize,
+        Complex[] dataFft
+    ) {
+
+        public DistanceProfileQuery(
+            RollingWindowStatistics<S> ts,
+            RollingWindowStatistics<S> query, int queryIndex, int windowSize) {
+            this(ts, query, queryIndex, windowSize, null);
+        }
 
         public DistanceProfileQuery(
             RollingWindowStatistics<S> ts,
             RollingWindowStatistics<S> query, int windowSize) {
-            this(ts, query, 0, windowSize);
+            this(ts, query, 0, windowSize, null);
         }
 
         public DistanceProfileQuery(

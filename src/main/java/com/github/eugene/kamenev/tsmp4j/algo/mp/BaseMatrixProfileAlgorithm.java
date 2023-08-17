@@ -23,18 +23,13 @@ import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 public abstract class BaseMatrixProfileAlgorithm<S extends WindowStatistic,
     M extends MatrixProfile> implements MatrixProfileAlgorithm<S, M> {
 
-    protected final RollingWindowStatistics<S> rollingStatistics;
+    private final RollingWindowStatistics<S> rollingStatistics;
 
     public BaseMatrixProfileAlgorithm(RollingWindowStatistics<S> rollingWindowStatistics) {
         this.rollingStatistics = rollingWindowStatistics;
     }
 
-    @Override
-    public void update(double value) {
-        this.rollingStatistics.apply(value);
-    }
-
-    public boolean isReady() {
-        return this.rollingStatistics.getStatsBuffer().isFull();
+    public RollingWindowStatistics<S> rollingStatistics() {
+        return this.rollingStatistics;
     }
 }

@@ -29,13 +29,6 @@ import org.apache.commons.math3.complex.Complex;
  */
 public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction<S> {
 
-    /**
-     * It has a state now to avoid double computation of FFT,
-     *
-     * @TODO: find better place for this state, better to have this function stateless
-     */
-    private Complex[] dataFft;
-
     @Override
     public double[] apply(DistanceProfileQuery<S> dsq) {
         var n = dsq.data().dataSize();
@@ -43,15 +36,16 @@ public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction
         var qIndex = dsq.queryIndex();
         var meanB = dsq.query().mean(qIndex);
         var stdDevB = dsq.query().stdDev(qIndex);
-        if (this.dataFft == null) {
+        var dataFft = dsq.dataFft();
+        if (dataFft == null) {
             int padSize = Util.padSize(n);
-            this.dataFft = Util.forwardFft(dsq.data(), false, 0, padSize);
+            dataFft = Util.forwardFft(dsq.data(), false, 0, padSize);
         }
         var skip = dsq.query().dataSize() - (m + qIndex);
-        var queryFft = Util.forwardFft(dsq.query(), true, skip, this.dataFft.length);
+        var queryFft = Util.forwardFft(dsq.query(), true, skip, dataFft.length);
         var prod = new Complex[queryFft.length];
         for (int i = 0; i < queryFft.length; i++) {
-            prod[i] = queryFft[i].multiply(this.dataFft[i]);
+            prod[i] = queryFft[i].multiply(dataFft[i]);
         }
         var inv = Util.inverseFft(prod);
         double[] z = new double[inv.length];

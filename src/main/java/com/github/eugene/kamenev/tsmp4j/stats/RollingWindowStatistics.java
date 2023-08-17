@@ -22,13 +22,29 @@ import java.util.function.DoubleFunction;
 
 public interface RollingWindowStatistics<S extends WindowStatistic> extends DoubleFunction<S> {
 
-    double x(int i);
+    Buffer.ObjBuffer<S> getStatsBuffer();
 
-    double mean(int i);
+    Buffer.DoubleBuffer getDataBuffer();
 
-    double stdDev(int i);
+    default double x(int i) {
+        return this.getStatsBuffer().get(i).x();
+    }
 
-    boolean isReady();
+    default double mean(int i) {
+        return this.getStatsBuffer().get(shiftIndex(i)).mean();
+    }
+
+    default double stdDev(int i) {
+        return this.getStatsBuffer().get(shiftIndex(i)).stdDev();
+    }
+
+    default boolean isReady() {
+        return this.getDataBuffer().isFull();
+    }
+
+    default int shiftIndex(int i) {
+        return i + windowSize() - 1;
+    }
 
     default int windowSize() {
         return this.getDataBuffer().getLength();
@@ -37,9 +53,4 @@ public interface RollingWindowStatistics<S extends WindowStatistic> extends Doub
     default int dataSize() {
         return this.getStatsBuffer().getLength();
     }
-
-    Buffer.ObjBuffer<S> getStatsBuffer();
-
-    Buffer.DoubleBuffer getDataBuffer();
-
 }

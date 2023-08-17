@@ -1,12 +1,31 @@
 package com.github.eugene.kamenev.tsmp4j
 
+import spock.lang.Shared
 import spock.lang.Specification
+
+import java.util.function.Function
 
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.hamcrest.Matchers.closeTo
 import static org.hamcrest.Matchers.equalTo
 
 class BaseSpec extends Specification {
+
+    public static double ERROR = 0.0000001d
+
+    @Shared
+    protected List<ToyData> data
+
+    def setupSpec() {
+        this.data = loadData('mp_toy_data.csv', (rows) -> {
+            return Arrays.stream(rows)
+                    .map(s -> {
+                        return new ToyData(s[0] as double, s[1] as double, s[2] as double)
+                    }).toList()
+        }, BaseSpec)
+    }
+
+
     double[] getTimeSeries() {
         return new double[]{
                 36.3, 55.57, 56.91, 57.48, 61.13, 74.48, 77.75, 63.1, 67.98, 69.13, 49.98, 47.72, 35.07, 41.95,
@@ -26,7 +45,7 @@ class BaseSpec extends Specification {
         return new double[]{38.04, 45.37, 54.68, 53.94, 44.3, 48.53}
     }
 
-    boolean equals(double[] a, double[] b, double th = 0.00001) {
+    boolean equals(double[] a, double[] b, double th = ERROR) {
         if (a.length != b.length) {
             return false
         }
@@ -44,5 +63,45 @@ class BaseSpec extends Specification {
             assertThat("On index ${i}", a[i], equalTo(b[i]))
         }
         return true
+    }
+
+    static <T> T loadData(String file, Function<String[][], T> transform, Class clazz = this.getClass()) {
+        String[][] data = clazz.getResourceAsStream(file)
+                .readLines()
+                .stream()
+                .skip(1)
+                .map(s -> s.split(','))
+                .toArray(String[][]::new)
+        return transform.apply(data)
+    }
+
+    static MP loadMP(String file, Class clazz = this.getClass()) {
+        loadData(file, (rows) -> {
+            double[] mp = new double[rows.size()]
+            int[] pi = new int[rows.size()]
+            int counter = 0
+            Arrays.stream(rows).forEach(row -> {
+                mp[counter] = row[0] as double
+                pi[counter++] = (row[1] as int) - 1 // in R indexing starts from 1
+            })
+            return new MP(mp, pi)
+        }, clazz)
+    }
+
+    static record ToyData(double x, double y, double z) {}
+
+    static record MP(double[] mp, int[] pi) {}
+
+    static record MPDist(double[] x) {
+        static MPDist load(String path, Class clazz) {
+            return loadData(path, (rows) -> {
+                double[] x = new double[rows.length]
+                int counter = 0
+                Arrays.stream(rows).forEach(row -> {
+                    x[counter++] = row[0] as double
+                })
+                return new MPDist(x)
+            }, clazz)
+        }
     }
 }
