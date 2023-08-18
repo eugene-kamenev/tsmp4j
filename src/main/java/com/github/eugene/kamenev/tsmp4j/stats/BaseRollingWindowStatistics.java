@@ -59,7 +59,7 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
             this.dataCount--;
         }
 
-        this.dataBuffer.addToEnd(dataPoint);
+        this.getDataBuffer().addToEnd(dataPoint);
         this.dataCount++;
 
         double previousMean = this.currentMean;
