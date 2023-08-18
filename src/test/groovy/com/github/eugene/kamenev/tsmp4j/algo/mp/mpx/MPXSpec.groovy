@@ -3,6 +3,8 @@ package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx
 import com.github.eugene.kamenev.tsmp4j.BaseSpec
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction
 
+import java.util.stream.Stream
+
 import static org.hamcrest.Matchers.closeTo
 
 
@@ -130,6 +132,36 @@ class MPXSpec extends BaseSpec {
         equals(mpx.indexes(), check.pi())
         equals(mpx.indexesB(), check.pib())
         equals(mpx.profileB(), check.mpb())
+
+    }
+
+    def 'test mpx streaming produces same matrix profile'() {
+        given:
+        var windowSize = 30
+        var limit = 200
+
+        when:
+        var mpx = new MPX(windowSize, limit, false)
+        var mpx2 = new MPX(windowSize, limit, false)
+        var ystream = data.stream()
+                .mapToDouble(t -> t.y())
+                .limit(10) // additional 10 points at the beginning
+        var xstream = data.stream()
+                .mapToDouble(t -> t.x())
+                .limit(limit)
+
+        Stream.concat(ystream.boxed(), xstream.boxed())
+                .forEach(mpx2::update)
+        data.stream()
+                .limit(limit)
+                .mapToDouble(t -> t.x())
+                .forEach(mpx::update)
+        var mp = mpx.get()
+        var mp2 = mpx2.get()
+
+        then:
+        equals(mp2.profile(), mp.profile())
+        equals(mp2.indexes(), mp.indexes())
 
     }
 

@@ -28,25 +28,33 @@ public class MPXRollingWindowStatistics extends BaseRollingWindowStatistics<MPXS
 
     @Override
     protected MPXStatistic computeStats(double x, double mean, double stdDev, long id) {
-        double df = 0.0d;
-        double dg = 0.0d;
+        var df = 0.0d;
+        var dg = 0.0d;
         var tail = this.getStatsBuffer().getR(0);
         var head = this.getStatsBuffer().getR(windowSize() - 1);
         if (tail != null && head != null) {
             // df[i - w + 1] = 0.5 * (sb.x(i) - sb.x(i - w));
             df = 0.5 * (x - head.x());
             // dg[i - w + 1] = (sb.x(i) - sb.mean(i - w + 1)) + (sb.x(i - w) - sb.mean(i - w));
-            dg = (x - currentMean) + (head.x() - tail.mean());
+            dg = (x - mean) + (head.x() - tail.mean());
         }
         return new MPXStatistic(x, mean,
             Util.sanitizeValue(1 / Math.sqrt(this.varianceSum)), id, df, dg);
     }
 
     public double df(int i) {
+        if (i == 0) {
+            // always return zero for first element, this allows streaming to follow batch approach
+            return 0.0d;
+        }
         return this.getStatsBuffer().get(shiftIndex(i)).df();
     }
 
     public double dg(int i) {
+        if (i == 0) {
+            // always return zero for first element, this allows streaming to follow batch approach
+            return 0.0d;
+        }
         return this.getStatsBuffer().get(shiftIndex(i)).dg();
     }
 }
