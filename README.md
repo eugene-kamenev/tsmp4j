@@ -2,8 +2,7 @@
 
 This repository contains Matrix Profile algorithms implemented in Java.
 It is an attempt to port algorithms presented
-in [tsmp](https://github.com/matrix-profile-foundation/tsmp)
-and [stumpy](https://github.com/TDAmeritrade/stumpy).
+in [tsmp](https://github.com/matrix-profile-foundation/tsmp).
 
 [The Matrix Profile](https://www.cs.ucr.edu/~eamonn/MatrixProfile.html), has the potential to
 revolutionize time series data mining because of its generality,
@@ -15,9 +14,10 @@ discovery, clustering etc.
 This library includes the following algorithms:
 
 1. [STAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stamp/STAMP.java)
-2. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java)
-3. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java)
-4. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java)
+2. [STOMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stomp/STOMP.java)
+3. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java)
+4. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java)
+5. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java)
 
 More algorithms will be added in the future.
 
@@ -30,7 +30,7 @@ It simply computes statistics required to run Matrix Profile algorithms on the f
 DoubleStream stream = ... // your data stream
 var bs = 1024; // statistics buffer size
 var w = 10; // window for MP algorithm
-var stamp = new STAMP(bs, w);
+var stamp = new STAMP(w, bs);
 
 stream.forEach(stamp::update); // it keeps statistics updated, not the matrix profile
 
