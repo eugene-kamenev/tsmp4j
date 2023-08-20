@@ -38,6 +38,10 @@ public interface RollingWindowStatistics<S extends WindowStatistic> extends Doub
         return this.getStatsBuffer().get(shiftIndex(i)).stdDev();
     }
 
+    default boolean skip(int i) {
+        return this.getStatsBuffer().get(shiftIndex(i)).skip();
+    }
+
     default boolean isReady() {
         return this.getDataBuffer().isFull();
     }

@@ -29,7 +29,7 @@ class MASS2Spec extends BaseSpec {
         var dist = new MASS2().apply(query)
 
         then:
-        equals(dist, check.x())
+        equals(dist.profile(), check.x())
 
     }
 

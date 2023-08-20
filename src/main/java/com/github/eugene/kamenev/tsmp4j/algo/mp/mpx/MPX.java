@@ -130,17 +130,17 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     }
 
     @Override
-    public double[] apply(DistanceProfileQuery<MPXStatistic> dsq) {
+    public DistanceProfile apply(DistanceProfileQuery<MPXStatistic> dsq) {
         var d = dsq.data().dataSize() < dsq.query().dataSize() ? dsq.query() : dsq.data();
         var q = dsq.data() == d ? dsq.query() : dsq.data();
         var mpx = new MPX(d);
-        var mp = (MPXABBAJoinMatrixProfile) mpx.get(q);
-        var merged = new double[mp.profile().length + mp.profileB().length];
-        System.arraycopy(mp.profileB(), 0, merged, 0, mp.profileB().length);
-        System.arraycopy(mp.profile(), 0, merged, mp.profileB().length, mp.profile().length);
-        return new double[]{
+        var mp = mpx.get(q);
+        var merged = new double[mp.profile().length + mp.leftProfile().length];
+        System.arraycopy(mp.leftProfile(), 0, merged, 0, mp.leftProfile().length);
+        System.arraycopy(mp.profile(), 0, merged, mp.leftProfile().length, mp.profile().length);
+        return new DistanceProfile(new double[]{
             calMpDist(merged, this.threshold, d.dataSize() + q.dataSize())
-        };
+        });
     }
 
     public static BaseMatrixProfile of(double[] ts, int windowSize, boolean crossCorrelation) {
@@ -171,9 +171,12 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
         int[] mpi = new int[profile_len];
         double[] mpb = new double[profile_lenb];
         int[] mpib = new int[profile_lenb];
-
-        Arrays.fill(mp, -1.0);
-        Arrays.fill(mpb, -1.0);
+        for (int i = 0; i < profile_len; i++) {
+            mp[i] = -1.0;
+            if (i < profile_lenb) {
+                mpb[i] = -1;
+            }
+        }
 
         // AB Join
         computeJoin(ts, qs, mp, mpi, mpb, mpib, w);
@@ -183,7 +186,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
         postProcess(mp, w, crossCorrelation);
         postProcess(mpb, w, crossCorrelation);
 
-        return new MPXABBAJoinMatrixProfile(mp, mpi, mpb, mpib);
+        return new BaseMatrixProfile(mp, mpi, null, mpb, null, mpib);
     }
 
     private static <S extends WindowStatistic> void computeJoin(RollingWindowStatistics<S> a,

@@ -19,12 +19,28 @@ package com.github.eugene.kamenev.tsmp4j.utils;
 
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import java.util.Arrays;
+import java.util.Random;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 
 public class Util {
+
+    public static final double EPS = Math.sqrt(Math.ulp(1.0));
+
+    public static final double KMODE = 0.6311142d;
+
+    public static void shuffleArray(int[] array) {
+        int index, temp;
+        Random random = new Random();
+        for (int i = array.length - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            temp = array[index];
+            array[index] = array[i];
+            array[i] = temp;
+        }
+    }
 
     public static double calMpDist(double[] mp, double thr, int data_size) {
         int k = ((int) Math.ceil(thr * data_size));

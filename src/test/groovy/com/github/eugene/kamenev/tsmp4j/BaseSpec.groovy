@@ -50,7 +50,9 @@ class BaseSpec extends Specification {
             return false
         }
         for (int i = 0; i < a.length; i++) {
-            assertThat("On index ${i}", a[i], closeTo(b[i], th))
+            if (a[i] != b[i]) {
+                assertThat("On index ${i}", a[i], closeTo(b[i], th))
+            }
         }
         return true
     }
@@ -103,5 +105,22 @@ class BaseSpec extends Specification {
                 return new MPDist(x)
             }, clazz)
         }
+    }
+
+    static double parseDouble(String value) {
+        if (value == 'Inf') {
+            return Double.POSITIVE_INFINITY
+        } else if (value == '-Inf') {
+            return Double.NEGATIVE_INFINITY
+        } else {
+            return value as double
+        }
+    }
+
+    static int parseInt(String value) {
+        if (value == '-Inf') {
+            return -1
+        }
+        return value as int
     }
 }

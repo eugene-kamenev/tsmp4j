@@ -25,7 +25,8 @@ package com.github.eugene.kamenev.tsmp4j.stats;
  * @param stdDev standard deviation of the window
  * @param id     index in original data stream
  */
-public record BaseWindowStatistic(double x, double mean, double stdDev, long id) implements
+public record BaseWindowStatistic(double x, double mean, double stdDev, long id,
+                                  boolean skip) implements
     WindowStatistic {
 
 }

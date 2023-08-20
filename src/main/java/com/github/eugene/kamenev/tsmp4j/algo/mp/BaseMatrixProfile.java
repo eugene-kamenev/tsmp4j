@@ -22,9 +22,26 @@ public class BaseMatrixProfile implements MatrixProfile {
     private final double[] profile;
     private final int[] indexes;
 
+    private final double[] rightProfile;
+
+    private final double[] leftProfile;
+
+    private final int[] rightIndexes;
+
+    private final int[] leftIndexes;
+
     public BaseMatrixProfile(double[] profile, int[] indexes) {
+        this(profile, indexes, null, null, null, null);
+    }
+
+    public BaseMatrixProfile(double[] profile, int[] indexes, double[] rightProfile,
+        double[] leftProfile, int[] rightIndexes, int[] leftIndexes) {
         this.profile = profile;
         this.indexes = indexes;
+        this.rightProfile = rightProfile;
+        this.leftProfile = leftProfile;
+        this.rightIndexes = rightIndexes;
+        this.leftIndexes = leftIndexes;
     }
 
     @Override
@@ -35,5 +52,25 @@ public class BaseMatrixProfile implements MatrixProfile {
     @Override
     public int[] indexes() {
         return this.indexes;
+    }
+
+    @Override
+    public double[] rightProfile() {
+        return this.rightProfile;
+    }
+
+    @Override
+    public double[] leftProfile() {
+        return this.leftProfile;
+    }
+
+    @Override
+    public int[] rightIndexes() {
+        return this.rightIndexes;
+    }
+
+    @Override
+    public int[] leftIndexes() {
+        return this.leftIndexes;
     }
 }

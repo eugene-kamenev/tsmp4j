@@ -23,4 +23,12 @@ public interface MatrixProfile {
 
     int[] indexes();
 
+    double[] rightProfile();
+
+    int[] rightIndexes();
+
+    double[] leftProfile();
+
+    int[] leftIndexes();
+
 }

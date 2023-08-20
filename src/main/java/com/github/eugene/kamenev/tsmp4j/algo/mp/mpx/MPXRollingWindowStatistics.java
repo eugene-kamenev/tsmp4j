@@ -27,7 +27,8 @@ public class MPXRollingWindowStatistics extends BaseRollingWindowStatistics<MPXS
     }
 
     @Override
-    protected MPXStatistic computeStats(double x, double mean, double stdDev, long id) {
+    protected MPXStatistic computeStats(double x, double mean, double stdDev, long id,
+        boolean skip) {
         var df = 0.0d;
         var dg = 0.0d;
         var tail = this.getStatsBuffer().getR(0);
@@ -39,7 +40,7 @@ public class MPXRollingWindowStatistics extends BaseRollingWindowStatistics<MPXS
             dg = (x - mean) + (head.x() - tail.mean());
         }
         return new MPXStatistic(x, mean,
-            Util.sanitizeValue(1 / Math.sqrt(this.varianceSum)), id, df, dg);
+            Util.sanitizeValue(1 / Math.sqrt(this.varianceSum)), id, df, dg, false);
     }
 
     public double df(int i) {
