@@ -100,13 +100,13 @@ class MPXSpec extends BaseSpec {
                 .mapToDouble(t -> t.x())
                 .limit(limit)
                 .forEach(algo::update)
-        var mpx = (MPXABBAJoinMatrixProfile) algo.get(query)
+        var mpx = algo.get(query)
 
         then:
         equals(mpx.profile(), check.mp())
         equals(mpx.indexes(), check.pi())
-        equals(mpx.indexesB(), check.pib())
-        equals(mpx.profileB(), check.mpb())
+        equals(mpx.leftIndexes(), check.pib())
+        equals(mpx.leftProfile(), check.mpb())
     }
 
     def 'test mpx with query cross correlation true'() {
@@ -125,13 +125,13 @@ class MPXSpec extends BaseSpec {
                 .mapToDouble(t -> t.x())
                 .limit(limit)
                 .forEach(algo::update)
-        var mpx = (MPXABBAJoinMatrixProfile) algo.get(query)
+        var mpx = algo.get(query)
 
         then:
         equals(mpx.profile(), check.mp())
         equals(mpx.indexes(), check.pi())
-        equals(mpx.indexesB(), check.pib())
-        equals(mpx.profileB(), check.mpb())
+        equals(mpx.leftIndexes(), check.pib())
+        equals(mpx.leftProfile(), check.mpb())
 
     }
 
@@ -183,7 +183,7 @@ class MPXSpec extends BaseSpec {
         var dist = new MPX().apply(query)
 
         then:
-        closeTo(dist[0], ERROR).matches(MPDist.load('mpdist_same_size.csv', MPXSpec).x()[0])
+        closeTo(dist.profile()[0], ERROR).matches(MPDist.load('mpdist_same_size.csv', MPXSpec).x()[0])
     }
 
     def 'test mpdist diff size'() {
@@ -208,7 +208,7 @@ class MPXSpec extends BaseSpec {
         var dist = new MPX().apply(query)
 
         then:
-        closeTo(dist[0], ERROR).matches(MPDist.load('mpdist_diff_size.csv', MPXSpec).x()[0])
+        closeTo(dist.profile()[0], ERROR).matches(MPDist.load('mpdist_diff_size.csv', MPXSpec).x()[0])
     }
 
     static record MPQuery(double[] mp, int[] pi, double[] mpb, int[] pib) {

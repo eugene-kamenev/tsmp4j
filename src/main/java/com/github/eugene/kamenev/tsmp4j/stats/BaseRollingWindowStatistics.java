@@ -36,6 +36,7 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     protected double varianceSum = 0;
     private int dataCount = 0;
     private long totalDataCount = 0;
+    private int toSkip = 0;
 
     public BaseRollingWindowStatistics(int windowSize, S[] statsBuffer) {
         this.dataBuffer = new DoubleBuffer(windowSize);
@@ -59,6 +60,13 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
             this.dataCount--;
         }
 
+        if (Double.isNaN(dataPoint) || Double.isInfinite(dataPoint)) {
+            this.toSkip = this.windowSize();
+            dataPoint = 0.0d;
+        } else {
+            this.toSkip--;
+        }
+
         this.getDataBuffer().addToEnd(dataPoint);
         this.dataCount++;
 
@@ -71,14 +79,14 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
             populationVariance = this.varianceSum / this.dataCount;
         }
         var stat = computeStats(dataPoint, this.currentMean, computeStdDev(populationVariance),
-            totalDataCount);
+            totalDataCount, this.toSkip > 0);
         this.getStatsBuffer().addToEnd(stat);
         return stat;
     }
 
     @SuppressWarnings("unchecked")
-    protected S computeStats(double x, double mean, double stdDev, long id) {
-        return (S) new BaseWindowStatistic(x, mean, stdDev, id);
+    protected S computeStats(double x, double mean, double stdDev, long id, boolean skip) {
+        return (S) new BaseWindowStatistic(x, mean, stdDev, id, skip);
     }
 
     /**

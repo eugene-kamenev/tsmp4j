@@ -20,7 +20,7 @@ package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 
 public record MPXStatistic(double x, double mean, double stdDev, long id,
-                           double df, double dg)
+                           double df, double dg, boolean skip)
     implements WindowStatistic {
 
 }

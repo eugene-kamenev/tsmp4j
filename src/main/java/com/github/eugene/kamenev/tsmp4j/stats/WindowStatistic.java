@@ -27,4 +27,6 @@ public interface WindowStatistic {
 
     long id();
 
+    boolean skip();
+
 }
