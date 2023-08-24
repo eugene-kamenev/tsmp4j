@@ -138,11 +138,11 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
                     if (j == 1) {
                         accumulatedProducts[0] = prod;
                     }
-                    var dist =
-                        2 * (windowSize - (prod - windowSize * ts.mean(j - 1) * query.mean(i)) /
-                            (ts.stdDev(j - 1) * query.stdDev(i)));
-                    distanceProfile[j - 1] = dist > 0 ? Math.sqrt(dist) : 0;
 
+                    var a = (prod - windowSize * ts.mean(j - 1) * query.mean(i));
+                    var b = (ts.stdDev(j - 1) * query.stdDev(i));
+                    var dist = 2 * (windowSize - a / b);
+                    distanceProfile[j - 1] = Math.sqrt(dist);
                     if (j == mpSize) {
                         break;
                     }
@@ -168,13 +168,9 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
             }
 
             for (var k = 0; k < mpSize; k++) {
-                if (ts.stdDev(k) < Util.EPS || ts.skip(k) || ts.skip(i)) {
+                if (query.stdDev(i) < Util.EPS || ts.skip(i) || ts.skip(k)) {
                     distanceProfile[k] = Double.POSITIVE_INFINITY;
                 }
-            }
-
-            if (query.stdDev(i) < Util.EPS) {
-                distanceProfile[i] = Double.POSITIVE_INFINITY;
             }
 
             if (!isJoin) {
