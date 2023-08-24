@@ -59,7 +59,7 @@ public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction
             var meanA = dsq.data().mean(i - shift);
             var stdDevA = dsq.data().stdDev(i - shift);
             var d = 2 * (m - (z[i] - m * meanA * meanB) / (stdDevA * stdDevB));
-            dist[i - m + 1] = d > 0 ? (dsq.sqrt() ? Math.sqrt(d) : d) : 0;
+            dist[i - m + 1] = dsq.sqrt() ? Math.sqrt(d) : d;
         }
 
         return new DistanceProfile(dist, z);

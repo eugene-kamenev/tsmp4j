@@ -23,7 +23,12 @@ class STOMPSpec extends BaseSpec {
         var mp = stomp.get()
 
         then:
-        mp
+        equals(mp.profile(), check.profile())
+        equals(mp.indexes(), check.indexes())
+        equals(mp.leftProfile(), check.leftProfile())
+        equals(mp.leftIndexes(), check.leftIndexes())
+        equals(mp.rightProfile(), check.rightProfile())
+        equals(mp.rightIndexes(), check.rightIndexes())
     }
 
     def 'test stomp ab join'() {
