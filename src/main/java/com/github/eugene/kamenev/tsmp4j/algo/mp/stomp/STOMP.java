@@ -118,7 +118,7 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
         var rnn = nn;
         var fftQuery = fftTs;
         if (isJoin) {
-            fftQuery = Util.forwardFft(query, true, 0, Util.padSize(querySize));
+            fftQuery = Util.forwardFft(query, false, 0, Util.padSize(querySize));
             rnn = distFunc.apply(
                 new DistanceProfileQuery<>(query, ts, 0, windowSize, fftQuery, true));
         }

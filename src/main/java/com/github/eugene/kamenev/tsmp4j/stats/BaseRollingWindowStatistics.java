@@ -20,9 +20,6 @@ package com.github.eugene.kamenev.tsmp4j.stats;
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer;
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer.DoubleBuffer;
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer.ObjBuffer;
-import com.github.eugene.kamenev.tsmp4j.utils.Util;
-import java.math.BigDecimal;
-import java.math.MathContext;
 
 /**
  * Class computes rolling window statistics for a data stream, which is used in Matrix Profile
@@ -32,27 +29,20 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     implements RollingWindowStatistics<S> {
 
     private final Buffer.DoubleBuffer dataBuffer;
-
     private final Buffer.ObjBuffer<S> statsBuffer;
-
-    /**
-     * Usage of {@link MathContext#DECIMAL128} is required to avoid precision loss when computing
-     * stats, but still, since we are not using BigDecimal for every computation, some errors are expected.
-     */
-    private final MathContext mathContext = MathContext.DECIMAL128;
-    private long dataCount = 0;
+    private final int w;       // Window size
+    private double p = 0;      // Accumulated sum
+    private double s = 0;      // Compensation for accumulated errors
+    private double q = 0;      // Accumulated sum of squares
+    private double s_q = 0;    // Compensation for accumulated errors in squared sum
     private long totalDataCount = 0;
     private int toSkip = 0;
-    private BigDecimal sum = BigDecimal.ZERO;
-    private BigDecimal sumSq = BigDecimal.ZERO;
 
-    protected double varianceSum = 0.0d;
-
-    private double currentMean = 0.0d;
 
     public BaseRollingWindowStatistics(int windowSize, S[] statsBuffer) {
         this.dataBuffer = new DoubleBuffer(windowSize);
         this.statsBuffer = new ObjBuffer<>(statsBuffer);
+        this.w = windowSize;
     }
 
     @SuppressWarnings("unchecked")
@@ -61,75 +51,103 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     }
 
     @Override
-    public S apply(double dataPoint) {
-        this.totalDataCount++;
+    public S apply(double value) {
+        totalDataCount++;
+        double mean = 0.0d;
+        double populationVariance = 0.0d;
 
-        if (Double.isNaN(dataPoint) || Double.isInfinite(dataPoint)) {
-            this.toSkip = this.windowSize();
-            dataPoint = 0.0d;
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            toSkip = windowSize();
+            value = 0.0d;
         } else {
-            this.toSkip--;
+            toSkip--;
         }
 
-        if (this.getDataBuffer().isFull()) {
-            var oldestData = this.getDataBuffer().head();
-            var x = BigDecimal.valueOf(oldestData);
-            this.sum = this.sum.subtract(x, mathContext);
-            this.sumSq = this.sumSq.subtract(x.multiply(x, mathContext));
-            double updatedMean =
-                (this.dataCount * this.currentMean - oldestData) / (this.dataCount - 1);
-            this.varianceSum -= (oldestData - this.currentMean) * (oldestData - updatedMean);
-            this.currentMean = updatedMean;
-            this.dataCount--;
+        if (!dataBuffer.isFull()) {
+            addValue(value);
+            if (dataBuffer.isFull()) {
+                mean = getMean();
+                populationVariance = getPopulationVariance();
+            }
+        } else {
+            double oldestValue = dataBuffer.head();
+            removeValue(oldestValue);
+            addValue(value);
+            mean = getMean();
+            populationVariance = getPopulationVariance();
         }
-        this.getDataBuffer().addToEnd(dataPoint);
-        var x = BigDecimal.valueOf(dataPoint);
-        this.dataCount++;
-        var count = BigDecimal.valueOf(dataCount);
-        this.sum = this.sum.add(x);
-        this.sumSq = this.sumSq.add(x.multiply(x, mathContext));
-        var mean = this.sum.divide(count, mathContext);
-        double previousMean = this.currentMean;
-        this.currentMean = mean.doubleValue();
-        this.varianceSum += (dataPoint - previousMean) * (dataPoint - this.currentMean);
-        var populationVariance = BigDecimal.ZERO;
-        var stdDev = BigDecimal.ZERO;
-        if (this.dataCount > 1) {
-            var meanSq = mean.multiply(mean, mathContext);
-            populationVariance = sumSq.divide(count, mathContext)
-                .subtract(meanSq, mathContext);
-            stdDev = populationVariance.compareTo(BigDecimal.ZERO) >= 0 ? populationVariance.sqrt(
-                mathContext) : BigDecimal.ZERO;
-        }
-        var stat = computeStats(dataPoint, mean.doubleValue(), stdDev.doubleValue(),
-            totalDataCount, this.toSkip > 0);
-        this.getStatsBuffer().addToEnd(stat);
+
+        var stat = computeStats(value, mean, Math.sqrt(Math.max(0, populationVariance)),
+            populationVariance, totalDataCount, toSkip > 0);
+        getStatsBuffer().addToEnd(stat);
         return stat;
     }
 
-    @SuppressWarnings("unchecked")
-    protected S computeStats(double x, double mean, double stdDev, long id, boolean skip) {
-        return (S) new BaseWindowStatistic(x, mean, stdDev, id, skip);
+    private void addValue(double value) {
+        addToP(value);
+        addToQ(value);
+        dataBuffer.addToEnd(value);
     }
 
-    /**
-     * Computes the standard deviation from variance.
-     *
-     * @param variance The variance value.
-     * @return The standard deviation.
-     */
-    protected double computeStdDev(double variance) {
-        double stdDev = Math.sqrt(variance);
-        return Util.sanitizeValue(stdDev);
+    private void removeValue(double value) {
+        subtractFromP(value);
+        subtractFromQ(value);
+    }
+
+    private void addToP(double value) {
+        double y = value - s;
+        double t = p + y;
+        s = (t - p) - y;
+        p = t;
+    }
+
+    private void subtractFromP(double value) {
+        double y = -value - s;
+        double t = p + y;
+        s = (t - p) - y;
+        p = t;
+    }
+
+    private void addToQ(double value) {
+        double square = value * value;
+        double y = square - s_q;
+        double t = q + y;
+        s_q = (t - q) - y;
+        q = t;
+    }
+
+    private void subtractFromQ(double value) {
+        double square = value * value;
+        double y = -square - s_q;
+        double t = q + y;
+        s_q = (t - q) - y;
+        q = t;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected S computeStats(double x, double mean, double stdDev, double variance, long id,
+        boolean skip) {
+        return (S) new BaseWindowStatistic(x, mean, stdDev, id, skip);
     }
 
     @Override
     public DoubleBuffer getDataBuffer() {
-        return this.dataBuffer;
+        return dataBuffer;
     }
 
     @Override
     public ObjBuffer<S> getStatsBuffer() {
-        return this.statsBuffer;
+        return statsBuffer;
+    }
+
+    private double getMean() {
+        return (p + s) / w;
+    }
+
+    private double getPopulationVariance() {
+        // not sure, maybe Welford's algorithm is better for variance
+        double mean = getMean();
+        double sqMean = mean * mean;
+        return (q + s_q - w * sqMean) / w;
     }
 }

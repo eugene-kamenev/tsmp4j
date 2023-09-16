@@ -18,7 +18,6 @@
 package com.github.eugene.kamenev.tsmp4j.algo.mp.mpx;
 
 import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics;
-import com.github.eugene.kamenev.tsmp4j.utils.Util;
 
 public class MPXRollingWindowStatistics extends BaseRollingWindowStatistics<MPXStatistic> {
 
@@ -27,20 +26,22 @@ public class MPXRollingWindowStatistics extends BaseRollingWindowStatistics<MPXS
     }
 
     @Override
-    protected MPXStatistic computeStats(double x, double mean, double stdDev, long id,
+    protected MPXStatistic computeStats(double x, double mean, double stdDev, double variance,
+        long id,
         boolean skip) {
         var df = 0.0d;
         var dg = 0.0d;
         var tail = this.getStatsBuffer().getR(0);
         var head = this.getStatsBuffer().getR(windowSize() - 1);
-        if (tail != null && head != null) {
+        if (head != null) {
             // df[i - w + 1] = 0.5 * (sb.x(i) - sb.x(i - w));
             df = 0.5 * (x - head.x());
             // dg[i - w + 1] = (sb.x(i) - sb.mean(i - w + 1)) + (sb.x(i - w) - sb.mean(i - w));
             dg = (x - mean) + (head.x() - tail.mean());
         }
         return new MPXStatistic(x, mean,
-            Util.sanitizeValue(1 / Math.sqrt(this.varianceSum)), id, df, dg, false);
+            this.getDataBuffer().size() > 2 ? 1 / Math.sqrt(variance * this.getDataBuffer().size())
+                : 0, id, df, dg, false);
     }
 
     public double df(int i) {
