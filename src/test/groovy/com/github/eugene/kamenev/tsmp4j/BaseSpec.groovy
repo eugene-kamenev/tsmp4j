@@ -1,5 +1,6 @@
 package com.github.eugene.kamenev.tsmp4j
 
+import groovy.transform.CompileStatic
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -15,7 +16,7 @@ class BaseSpec extends Specification {
      * Note that due to using double type for calculations,
      * we experience some error in calculations
      */
-    public static double ERROR = 0.00000000001d
+    public static double ERROR = Math.pow(10, -11);
 
     @Shared
     protected List<ToyData> data
@@ -34,7 +35,7 @@ class BaseSpec extends Specification {
             return false
         }
         for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
+            if (!a[i].equals(b[i])) {
                 assertThat("On index ${i}", a[i], closeTo(b[i], th))
             }
         }
@@ -63,8 +64,8 @@ class BaseSpec extends Specification {
 
     static MP loadMP(String file, Class clazz = this.getClass()) {
         loadData(file, (rows) -> {
-            double[] mp = new double[rows.size()]
-            int[] pi = new int[rows.size()]
+            double[] mp = new double[rows.length]
+            int[] pi = new int[rows.length]
             int counter = 0
             Arrays.stream(rows).forEach(row -> {
                 mp[counter] = row[0] as double
