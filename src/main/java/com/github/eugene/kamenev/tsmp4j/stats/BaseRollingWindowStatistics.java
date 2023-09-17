@@ -17,32 +17,38 @@
 
 package com.github.eugene.kamenev.tsmp4j.stats;
 
+import static com.mvohm.quadruple.Quadruple.add;
+import static com.mvohm.quadruple.Quadruple.divide;
+import static com.mvohm.quadruple.Quadruple.multiply;
+import static com.mvohm.quadruple.Quadruple.one;
+import static com.mvohm.quadruple.Quadruple.subtract;
+
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer;
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer.DoubleBuffer;
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer.ObjBuffer;
+import com.mvohm.quadruple.Quadruple;
 
 /**
  * Class computes rolling window statistics for a data stream, which is used in Matrix Profile
- * algorithms. Can be used offline/online.
+ * algorithms. Can be used offline/online. K-algorithm taken from: <a
+ * href="https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Computing_shifted_data">Computing
+ * shifted data</a>
  */
 public class BaseRollingWindowStatistics<S extends WindowStatistic>
     implements RollingWindowStatistics<S> {
 
     private final Buffer.DoubleBuffer dataBuffer;
     private final Buffer.ObjBuffer<S> statsBuffer;
-    private final int w;       // Window size
-    private double p = 0;      // Accumulated sum
-    private double s = 0;      // Compensation for accumulated errors
-    private double q = 0;      // Accumulated sum of squares
-    private double s_q = 0;    // Compensation for accumulated errors in squared sum
+    private final Quadruple n = new Quadruple();
+    private final Quadruple K = new Quadruple();
+    private final Quadruple Ex = new Quadruple();
+    private final Quadruple Ex2 = new Quadruple();
     private long totalDataCount = 0;
     private int toSkip = 0;
-
 
     public BaseRollingWindowStatistics(int windowSize, S[] statsBuffer) {
         this.dataBuffer = new DoubleBuffer(windowSize);
         this.statsBuffer = new ObjBuffer<>(statsBuffer);
-        this.w = windowSize;
     }
 
     @SuppressWarnings("unchecked")
@@ -53,30 +59,19 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     @Override
     public S apply(double value) {
         totalDataCount++;
-        double mean = 0.0d;
-        double populationVariance = 0.0d;
-
         if (Double.isNaN(value) || Double.isInfinite(value)) {
             toSkip = windowSize();
             value = 0.0d;
         } else {
             toSkip--;
         }
-
-        if (!dataBuffer.isFull()) {
-            addValue(value);
-            if (dataBuffer.isFull()) {
-                mean = getMean();
-                populationVariance = getPopulationVariance();
-            }
-        } else {
-            double oldestValue = dataBuffer.head();
-            removeValue(oldestValue);
-            addValue(value);
-            mean = getMean();
-            populationVariance = getPopulationVariance();
+        if (this.dataBuffer.isFull()) {
+            this.removeValue(this.dataBuffer.head());
         }
-
+        this.dataBuffer.addToEnd(value);
+        this.addValue(value);
+        var mean = getMean();
+        var populationVariance = getPopulationVariance();
         var stat = computeStats(value, mean, Math.sqrt(Math.max(0, populationVariance)),
             populationVariance, totalDataCount, toSkip > 0);
         getStatsBuffer().addToEnd(stat);
@@ -84,44 +79,21 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     }
 
     private void addValue(double value) {
-        addToP(value);
-        addToQ(value);
-        dataBuffer.addToEnd(value);
+        var val = new Quadruple(value);
+        if (n.doubleValue() == 0.0d) {
+            K.assign(val);
+        }
+        var diff = val.subtract(K);
+        n.add(one());
+        Ex.add(diff);
+        Ex2.add(multiply(diff, diff));
     }
 
     private void removeValue(double value) {
-        subtractFromP(value);
-        subtractFromQ(value);
-    }
-
-    private void addToP(double value) {
-        double y = value - s;
-        double t = p + y;
-        s = (t - p) - y;
-        p = t;
-    }
-
-    private void subtractFromP(double value) {
-        double y = -value - s;
-        double t = p + y;
-        s = (t - p) - y;
-        p = t;
-    }
-
-    private void addToQ(double value) {
-        double square = value * value;
-        double y = square - s_q;
-        double t = q + y;
-        s_q = (t - q) - y;
-        q = t;
-    }
-
-    private void subtractFromQ(double value) {
-        double square = value * value;
-        double y = -square - s_q;
-        double t = q + y;
-        s_q = (t - q) - y;
-        q = t;
+        n.subtract(one());
+        var diff = new Quadruple(value).subtract(K);
+        Ex.subtract(diff);
+        Ex2.subtract(multiply(diff, diff));
     }
 
     @SuppressWarnings("unchecked")
@@ -141,13 +113,10 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     }
 
     private double getMean() {
-        return (p + s) / w;
+        return add(K, divide(Ex, n)).doubleValue();
     }
 
     private double getPopulationVariance() {
-        // not sure, maybe Welford's algorithm is better for variance
-        double mean = getMean();
-        double sqMean = mean * mean;
-        return (q + s_q - w * sqMean) / w;
+        return subtract(Ex2, multiply(Ex, Ex).divide(n)).divide(n).doubleValue();
     }
 }

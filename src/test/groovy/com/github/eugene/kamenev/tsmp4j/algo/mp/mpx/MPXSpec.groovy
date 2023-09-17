@@ -10,6 +10,8 @@ import static org.hamcrest.Matchers.closeTo
 
 class MPXSpec extends BaseSpec {
 
+    public static double ERROR = Math.pow(10, -13);
+
     def 'test moving stats method'() {
         given:
         var windowSize = 30
@@ -209,6 +211,11 @@ class MPXSpec extends BaseSpec {
 
         then:
         closeTo(dist.profile()[0], ERROR).matches(MPDist.load('mpdist_diff_size.csv', MPXSpec).x()[0])
+    }
+
+    @Override
+    boolean equals(double[] a, double[] b) {
+        return super.equals(a, b, ERROR)
     }
 
     static record MPQuery(double[] mp, int[] pi, double[] mpb, int[] pib) {
