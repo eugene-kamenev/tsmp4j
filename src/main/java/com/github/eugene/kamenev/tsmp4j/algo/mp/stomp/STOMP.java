@@ -114,13 +114,13 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
         }
 
         var fftTs = Util.forwardFft(ts, false, 0, Util.padSize(dataSize));
-        var nn = distFunc.apply(new DistanceProfileQuery<>(ts, query, 0, windowSize, fftTs, true));
+        var nn = distFunc.apply(new DistanceProfileQuery<>(ts, query, 0, windowSize, fftTs));
         var rnn = nn;
         var fftQuery = fftTs;
         if (isJoin) {
             fftQuery = Util.forwardFft(query, false, 0, Util.padSize(querySize));
             rnn = distFunc.apply(
-                new DistanceProfileQuery<>(query, ts, 0, windowSize, fftQuery, true));
+                new DistanceProfileQuery<>(query, ts, 0, windowSize, fftQuery));
         }
 
         double[] firstProduct = Arrays.stream(rnn.product()).skip(windowSize - 1).limit(numQueries)

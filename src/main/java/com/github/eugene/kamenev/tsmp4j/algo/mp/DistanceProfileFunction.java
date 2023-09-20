@@ -34,25 +34,27 @@ public interface DistanceProfileFunction<S extends WindowStatistic>
         int windowSize,
         Complex[] dataFft,
 
-        boolean sqrt
+        boolean sqrt,
+
+        boolean norm
     ) {
 
         public DistanceProfileQuery(
             RollingWindowStatistics<S> ts,
             RollingWindowStatistics<S> query, int queryIndex, int windowSize, Complex[] fft) {
-            this(ts, query, queryIndex, windowSize, fft, true);
+            this(ts, query, queryIndex, windowSize, fft, true, false);
         }
 
         public DistanceProfileQuery(
             RollingWindowStatistics<S> ts,
             RollingWindowStatistics<S> query, int queryIndex, int windowSize) {
-            this(ts, query, queryIndex, windowSize, null, true);
+            this(ts, query, queryIndex, windowSize, null, true, false);
         }
 
         public DistanceProfileQuery(
             RollingWindowStatistics<S> ts,
             RollingWindowStatistics<S> query, int windowSize) {
-            this(ts, query, 0, windowSize, null, true);
+            this(ts, query, 0, windowSize, null, true, false);
         }
 
         public DistanceProfileQuery(
