@@ -17,9 +17,13 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp.mass;
 
+import static com.mvohm.quadruple.Quadruple.multiply;
+import static com.mvohm.quadruple.Quadruple.subtract;
+
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import com.github.eugene.kamenev.tsmp4j.utils.Util;
+import com.mvohm.quadruple.Quadruple;
 import org.apache.commons.math3.complex.Complex;
 
 /**
@@ -34,8 +38,6 @@ public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction
         var n = dsq.data().dataSize();
         var m = dsq.windowSize();
         var qIndex = dsq.queryIndex();
-        var meanB = dsq.query().mean(qIndex);
-        var stdDevB = dsq.query().stdDev(qIndex);
         var dataFft = dsq.dataFft();
         if (dataFft == null) {
             int padSize = Util.padSize(n);
@@ -52,16 +54,38 @@ public class MASS2<S extends WindowStatistic> implements DistanceProfileFunction
         for (int i = 0; i < inv.length; i++) {
             z[i] = inv[i].getReal();
         }
-
+        var meanB = new Quadruple(dsq.query().mean(qIndex));
+        var stdDevB = new Quadruple(dsq.query().stdDev(qIndex));
+        var N = new Quadruple(n);
+        var M = new Quadruple(m);
         var dist = new double[n - m + 1];
-        var shift = m - 1;
-        for (var i = shift; i < n; i++) {
+        var shift = M.intValue() - 1;
+        for (var i = shift; i < N.intValue(); i++) {
             var meanA = dsq.data().mean(i - shift);
             var stdDevA = dsq.data().stdDev(i - shift);
-            var d = 2 * (m - (z[i] - m * meanA * meanB) / (stdDevA * stdDevB));
-            dist[i - m + 1] = dsq.sqrt() ? Math.sqrt(d) : d;
+            var d = computeDistance(M, new Quadruple(z[i]), new Quadruple(meanA), meanB,
+                new Quadruple(stdDevA), stdDevB);
+            if (dsq.sqrt()) {
+                if (d.compareTo(0.0d) < 0) {
+                    d.assign(0.0d);
+                } else {
+                    d.sqrt();
+                    if (dsq.norm()) {
+                        d.divide(Quadruple.sqrt(N));
+                    }
+                }
+            }
+            dist[i - m + 1] = d.doubleValue();
         }
 
         return new DistanceProfile(dist, z);
+    }
+
+    private Quadruple computeDistance(Quadruple m, Quadruple z, Quadruple meanA, Quadruple meanB,
+        Quadruple stdDevA, Quadruple stdDevB) {
+        // var d = 2 * (m - (z[i] - m * meanA * meanB) / (stdDevA * stdDevB));
+        var a = multiply(m, multiply(meanB, meanA));
+        var b = multiply(stdDevA, stdDevB);
+        return Quadruple.two().multiply(subtract(m, subtract(z, a).divide(b)));
     }
 }

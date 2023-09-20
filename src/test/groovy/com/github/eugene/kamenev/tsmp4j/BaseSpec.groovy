@@ -1,6 +1,5 @@
 package com.github.eugene.kamenev.tsmp4j
 
-import groovy.transform.CompileStatic
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -32,7 +31,7 @@ class BaseSpec extends Specification {
 
     boolean equals(double[] a, double[] b, double th = ERROR) {
         if (a.length != b.length) {
-            return false
+            throw new IllegalStateException("Arrays have different length");
         }
         for (int i = 0; i < a.length; i++) {
             if (!a[i].equals(b[i])) {
@@ -44,7 +43,7 @@ class BaseSpec extends Specification {
 
     boolean equals(int[] a, int[] b) {
         if (a.length != b.length) {
-            return false
+            throw new IllegalStateException("Arrays have different length");
         }
         for (int i = 0; i < a.length; i++) {
             assertThat("On index ${i}", a[i], equalTo(b[i]))
@@ -69,7 +68,7 @@ class BaseSpec extends Specification {
             int counter = 0
             Arrays.stream(rows).forEach(row -> {
                 mp[counter] = row[0] as double
-                pi[counter++] = (row[1] as int) - 1 // in R indexing starts from 1
+                pi[counter++] = (row[1] as int) - 1 // in R and Matlab indexing starts from 1
             })
             return new MP(mp, pi)
         }, clazz)
