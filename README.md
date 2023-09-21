@@ -21,7 +21,7 @@ This library includes the following algorithms:
 6. [ContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/ContrastProfileAlgorithm.java)
 7. [PanContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/PanContrastProfileAlgorithm.java)
 8. [RelativeFrequencyMatrixProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyMatrixProfileAlgorithm.java)
-9. [RelativeFrequencyMatrixProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyContrastProfileAlgorithm.java)
+9. [RelativeFrequencyContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyContrastProfileAlgorithm.java)
 
 More algorithms will be added in the future.
 
