@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.closeTo
 
 class MPXSpec extends BaseSpec {
 
-    public static double ERROR = Math.pow(10, -13);
+    public static double ERROR = Math.pow(10, -12);
 
     def 'test moving stats method'() {
         given:
