@@ -2,7 +2,6 @@ package com.github.eugene.kamenev.tsmp4j.algo.cp
 
 import com.github.eugene.kamenev.tsmp4j.BaseSpec
 import com.github.eugene.kamenev.tsmp4j.algo.mp.mpx.MPXRollingWindowStatistics
-import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics
 
 class ContrastProfileSpec extends BaseSpec {
 
@@ -10,7 +9,6 @@ class ContrastProfileSpec extends BaseSpec {
 
     def 'test contrast profile'() {
         given:
-        var error = Math.pow(10, -14);
         var cmpCheck = MPDist.load("cmp.csv", ContrastProfileSpec)
         var platoCheck = MPDist.load("cmp_plato.csv", ContrastProfileSpec)
         var platoTwinCheck = MPDist.load("cmp_plato_twin.csv", ContrastProfileSpec)
@@ -29,9 +27,9 @@ class ContrastProfileSpec extends BaseSpec {
         var profile = new ContrastProfileAlgorithm().apply(positiveTs, negativeTs)
 
         then:
-        equals(profile.profile(), cmpCheck.x(), error)
-        equals(profile.plato(), platoCheck.x(), error)
-        equals(profile.platoTwin(), platoTwinCheck.x(), error)
+        equals(profile.profile(), cmpCheck.x())
+        equals(profile.plato(), platoCheck.x())
+        equals(profile.platoTwin(), platoTwinCheck.x())
 
     }
 

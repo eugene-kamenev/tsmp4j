@@ -17,16 +17,10 @@
 
 package com.github.eugene.kamenev.tsmp4j.stats;
 
-import static com.mvohm.quadruple.Quadruple.add;
-import static com.mvohm.quadruple.Quadruple.divide;
-import static com.mvohm.quadruple.Quadruple.multiply;
-import static com.mvohm.quadruple.Quadruple.one;
-import static com.mvohm.quadruple.Quadruple.subtract;
 
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer;
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer.DoubleBuffer;
 import com.github.eugene.kamenev.tsmp4j.utils.Buffer.ObjBuffer;
-import com.mvohm.quadruple.Quadruple;
 
 /**
  * Class computes rolling window statistics for a data stream, which is used in Matrix Profile
@@ -39,10 +33,11 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
 
     private final Buffer.DoubleBuffer dataBuffer;
     private final Buffer.ObjBuffer<S> statsBuffer;
-    private final Quadruple n = new Quadruple();
-    private final Quadruple K = new Quadruple();
-    private final Quadruple Ex = new Quadruple();
-    private final Quadruple Ex2 = new Quadruple();
+    private int n;
+    private double K;
+    private double Ex;
+    private double Ex2;
+
     private long totalDataCount = 0;
     private int toSkip = 0;
 
@@ -79,21 +74,20 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     }
 
     private void addValue(double value) {
-        var val = new Quadruple(value);
-        if (n.doubleValue() == 0.0d) {
-            K.assign(val);
+        if (n == 0) {
+            K = value;
         }
-        var diff = val.subtract(K);
-        n.add(one());
-        Ex.add(diff);
-        Ex2.add(multiply(diff, diff));
+        var diff = value - K;
+        Ex += diff;
+        Ex2 += diff * diff;
+        n++;
     }
 
     private void removeValue(double value) {
-        n.subtract(one());
-        var diff = new Quadruple(value).subtract(K);
-        Ex.subtract(diff);
-        Ex2.subtract(multiply(diff, diff));
+        var diff = value - K;
+        Ex -= diff;
+        Ex2 -= diff * diff;
+        n--;
     }
 
     @SuppressWarnings("unchecked")
@@ -113,10 +107,10 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     }
 
     private double getMean() {
-        return add(K, divide(Ex, n)).doubleValue();
+        return K + Ex / n;
     }
 
     private double getPopulationVariance() {
-        return subtract(Ex2, multiply(Ex, Ex).divide(n)).divide(n).doubleValue();
+        return (Ex2 - Ex * Ex / n) / n;
     }
 }
