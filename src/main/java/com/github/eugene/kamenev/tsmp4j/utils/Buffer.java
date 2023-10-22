@@ -61,8 +61,16 @@ public abstract class Buffer {
         private final T[] buff;
 
         public ObjBuffer(T[] buff) {
+            this(buff, false);
+        }
+
+        public ObjBuffer(T[] buff, boolean isFull) {
             super(buff.length);
             this.buff = buff;
+            if (isFull) {
+                this.mCnt = buff.length;
+                this.mEnd = this.mCnt - 1;
+            }
         }
 
         public void addToEnd(T val) {
@@ -145,6 +153,13 @@ public abstract class Buffer {
         public DoubleBuffer(final int size) {
             super(size);
             this.buff = new double[size];
+        }
+
+        public DoubleBuffer(DoubleBuffer buffer) {
+            super(buffer.size());
+            this.buff = buffer.copy();
+            this.mCnt = this.buff.length;
+            this.mEnd = this.mCnt - 1;
         }
 
         public void addToEnd(double val) {

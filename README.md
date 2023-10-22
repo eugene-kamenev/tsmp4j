@@ -15,13 +15,14 @@ This library includes the following algorithms:
 
 1. [STAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stamp/STAMP.java)
 2. [STOMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stomp/STOMP.java)
-3. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java)
-4. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java)
-5. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java)
-6. [ContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/ContrastProfileAlgorithm.java)
-7. [PanContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/PanContrastProfileAlgorithm.java)
-8. [RelativeFrequencyMatrixProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyMatrixProfileAlgorithm.java)
-9. [RelativeFrequencyContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyContrastProfileAlgorithm.java)
+3. [STOMPI](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stompi/STOMPI.java)
+4. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java)
+5. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java)
+6. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java)
+7. [ContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/ContrastProfileAlgorithm.java)
+8. [PanContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/PanContrastProfileAlgorithm.java)
+9. [RelativeFrequencyMatrixProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyMatrixProfileAlgorithm.java)
+10. [RelativeFrequencyContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyContrastProfileAlgorithm.java)
 
 More algorithms will be added in the future.
 
