@@ -46,9 +46,29 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
         this.statsBuffer = new ObjBuffer<>(statsBuffer);
     }
 
+    public BaseRollingWindowStatistics(int windowSize, S[] statsBuffer, boolean isFull) {
+        this.dataBuffer = new DoubleBuffer(windowSize);
+        this.statsBuffer = new ObjBuffer<>(statsBuffer, isFull);
+    }
+
     @SuppressWarnings("unchecked")
     public BaseRollingWindowStatistics(int windowSize, int statsBufferSize) {
         this(windowSize, (S[]) new WindowStatistic[statsBufferSize]);
+    }
+
+    public BaseRollingWindowStatistics(BaseRollingWindowStatistics<S> stats, int size) {
+        this.Ex2 = stats.Ex2;
+        this.Ex = stats.Ex;
+        this.K = stats.K;
+        this.n = stats.n;
+        this.toSkip = stats.toSkip;
+        this.totalDataCount = stats.totalDataCount;
+        this.dataBuffer = new DoubleBuffer(stats.dataBuffer);
+        this.statsBuffer = new ObjBuffer<>((S[]) new WindowStatistic[size]);
+            stats.getStatsBuffer().toStream()
+                .skip(stats.statsBuffer.size() - size)
+                .limit(size)
+                .forEach(this.statsBuffer::addToEnd);
     }
 
     @Override
