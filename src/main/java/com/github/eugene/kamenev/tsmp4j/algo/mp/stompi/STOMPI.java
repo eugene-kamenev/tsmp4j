@@ -17,10 +17,10 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp.stompi;
 
-import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfile;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseOnlineMatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction.DistanceProfileQuery;
-import com.github.eugene.kamenev.tsmp4j.algo.mp.MatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.MatrixProfileAlgorithm;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.OnlineMatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.mass.MASS2;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.stomp.STOMP;
 import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics;
@@ -36,33 +36,39 @@ import java.util.stream.Stream;
  * Real-time STOMP algorithm
  */
 public class STOMPI implements
-    MatrixProfileAlgorithm<BaseWindowStatistic, MatrixProfile> {
+    MatrixProfileAlgorithm<BaseWindowStatistic, OnlineMatrixProfile> {
 
     private final RollingWindowStatistics<BaseWindowStatistic> rollingStatistics;
-
-    private MatrixProfile matrixProfile;
 
     private final List<BaseWindowStatistic> history;
 
     private int newPoints = 0;
 
     private final int historySize;
+    private final int exclusionZoneSize;
+    private OnlineMatrixProfile matrixProfile;
 
-    private final int exclusionZone;
-
-    public STOMPI(BaseRollingWindowStatistics<BaseWindowStatistic> initialStats, int historySize) {
+    public STOMPI(BaseRollingWindowStatistics<BaseWindowStatistic> initialStats,
+        int historySize, double exclusionZone) {
         this.rollingStatistics = new BaseRollingWindowStatistics<>(initialStats, 1);
-        this.matrixProfile = new STOMP(initialStats).get();
+        this.matrixProfile = new BaseOnlineMatrixProfile(
+            new STOMP(initialStats, exclusionZone).get());
         this.history = initialStats.getStatsBuffer()
             .toStream()
             .limit(initialStats.dataSize() - 1)
             .collect(Collectors.toList());
         this.historySize = historySize;
-        this.exclusionZone = (int) Math.ceil(initialStats.windowSize() * 0.5d);
+        this.exclusionZoneSize = (int) Math.floor(
+            initialStats.windowSize() * exclusionZone + Util.EPS);
+    }
+
+    public STOMPI(BaseRollingWindowStatistics<BaseWindowStatistic> initialStats,
+        int historySize) {
+        this(initialStats, historySize, 0.5d);
     }
 
     @Override
-    public MatrixProfile get(RollingWindowStatistics<BaseWindowStatistic> query) {
+    public OnlineMatrixProfile get(RollingWindowStatistics<BaseWindowStatistic> query) {
         throw new UnsupportedOperationException("Not supported for STOMPI");
     }
 
@@ -79,7 +85,7 @@ public class STOMPI implements
     }
 
     @Override
-    public MatrixProfile get() {
+    public OnlineMatrixProfile get() {
         if (this.newPoints > 0) {
             int winSize = rollingStatistics().windowSize();
             var newBuffer = Stream.concat(
@@ -92,7 +98,7 @@ public class STOMPI implements
             double[] firstProduct = null;
             double[] lastProduct = null;
             double[] distProfile = null;
-            var newMatrixProfile = newMatrixProfile(this.matrixProfile);
+            var newMatrixProfile = OnlineMatrixProfile.extend(this.matrixProfile, newPoints);
             if (this.newPoints > 1) {
                 var firstQuery = newQuery(newBuffer, 0);
                 var firstDistanceProfile = new MASS2<BaseWindowStatistic>().apply(
@@ -131,7 +137,7 @@ public class STOMPI implements
                     distProfile[0] = computeDistance(0, winSize, lastProduct[0], newStats, query);
                 }
                 dropValue = query.x(0);
-                var excSt = Math.max(0, (qIndex + i) - exclusionZone);
+                var excSt = Math.max(0, (qIndex + i) - exclusionZoneSize);
                 var min = Double.POSITIVE_INFINITY;
                 var minIdx = -1;
                 for (int j = 0; j < distProfile.length; j++) {
@@ -179,7 +185,7 @@ public class STOMPI implements
                     offset++;
                 }
                 if (offset > 0) {
-                    newMatrixProfile = newMatrixProfileOfRange(newMatrixProfile, offset);
+                    newMatrixProfile = OnlineMatrixProfile.offset(newMatrixProfile, offset);
                 }
             }
             this.matrixProfile = newMatrixProfile;
@@ -207,52 +213,5 @@ public class STOMPI implements
         );
     }
 
-    private MatrixProfile newMatrixProfile(MatrixProfile profile) {
-        var newSize = profile.profile().length + newPoints;
-        double[] newProfile = Arrays.copyOf(profile.profile(), newSize);
-        int[] newIndexes = Arrays.copyOf(profile.indexes(), newSize);
-        double[] newRightProfile = Arrays.copyOf(profile.rightProfile(), newSize);
-        double[] newLeftProfile = Arrays.copyOf(profile.leftProfile(), newSize);
-        int[] newRightIndexes = Arrays.copyOf(profile.rightIndexes(), newSize);
-        int[] newLeftIndexes = Arrays.copyOf(profile.leftIndexes(),newSize);
-        for (int i = profile.profile().length; i < newProfile.length; i++) {
-            newProfile[i] = Double.POSITIVE_INFINITY;
-            newIndexes[i] = -1;
-            newRightProfile[i] = Double.POSITIVE_INFINITY;
-            newLeftProfile[i] = Double.POSITIVE_INFINITY;
-            newRightIndexes[i] = -1;
-            newLeftIndexes[i] = -1;
-        }
-        return new BaseMatrixProfile(
-            newProfile,
-            newIndexes,
-            newRightProfile,
-            newLeftProfile,
-            newRightIndexes,
-            newLeftIndexes
-        );
-    }
 
-    private MatrixProfile newMatrixProfileOfRange(MatrixProfile profile, int offset) {
-        var size = profile.profile().length;
-        double[] newProfile = Arrays.copyOfRange(profile.profile(), offset, size);
-        int[] newIndexes = Arrays.copyOfRange(profile.indexes(), offset, size);
-        double[] newRightProfile = Arrays.copyOfRange(profile.rightProfile(), offset, size);
-        double[] newLeftProfile = Arrays.copyOfRange(profile.leftProfile(), offset, size);
-        int[] newRightIndexes = Arrays.copyOfRange(profile.rightIndexes(), offset, size);
-        int[] newLeftIndexes = Arrays.copyOfRange(profile.leftIndexes(), offset, size);
-        for (int i = 0; i < newIndexes.length; i++) {
-            newIndexes[i] -= offset;
-            newRightIndexes[i] -= offset;
-            newLeftIndexes[i] -= offset;
-        }
-        return new BaseMatrixProfile(
-            newProfile,
-            newIndexes,
-            newRightProfile,
-            newLeftProfile,
-            newRightIndexes,
-            newLeftIndexes
-        );
-    }
 }

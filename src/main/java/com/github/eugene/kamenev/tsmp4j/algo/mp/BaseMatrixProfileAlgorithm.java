@@ -19,14 +19,23 @@ package com.github.eugene.kamenev.tsmp4j.algo.mp;
 
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
+import com.github.eugene.kamenev.tsmp4j.utils.Util;
 
 public abstract class BaseMatrixProfileAlgorithm<S extends WindowStatistic,
     M extends MatrixProfile> implements MatrixProfileAlgorithm<S, M> {
 
     private final RollingWindowStatistics<S> rollingStatistics;
 
-    public BaseMatrixProfileAlgorithm(RollingWindowStatistics<S> rollingWindowStatistics) {
+    protected final double exclusionZone;
+
+    protected final int exclusionZoneSize;
+
+    public BaseMatrixProfileAlgorithm(RollingWindowStatistics<S> rollingWindowStatistics,
+        double exclusionZone) {
         this.rollingStatistics = rollingWindowStatistics;
+        this.exclusionZone = exclusionZone;
+        this.exclusionZoneSize = rollingWindowStatistics != null ?
+            (int) Math.floor(rollingWindowStatistics.windowSize() * exclusionZone + Util.EPS) : 0;
     }
 
     public RollingWindowStatistics<S> rollingStatistics() {

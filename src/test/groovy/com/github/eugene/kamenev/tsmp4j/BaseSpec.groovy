@@ -1,6 +1,6 @@
 package com.github.eugene.kamenev.tsmp4j
 
-import spock.lang.Shared
+
 import spock.lang.Specification
 
 import java.util.function.Function
@@ -17,17 +17,11 @@ class BaseSpec extends Specification {
      */
     public static double ERROR = Math.pow(10, -11);
 
-    @Shared
-    protected List<ToyData> data
-
-    def setupSpec() {
-        this.data = loadData('mp_toy_data.csv', (rows) -> {
-            return Arrays.stream(rows)
-                    .map(s -> {
-                        return new ToyData(s[0] as double, s[1] as double, s[2] as double)
-                    }).toList()
-        }, BaseSpec)
-    }
+    public static final List<ToyData> data = loadData('mp_toy_data.csv', (rows) -> {
+        return Arrays.stream(rows).map(s -> {
+            return new ToyData(s[0] as double, s[1] as double, s[2] as double)
+        }).toList()
+    }, BaseSpec)
 
     boolean equals(double[] a, double[] b, double th = ERROR) {
         if (a.length != b.length) {

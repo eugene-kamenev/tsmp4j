@@ -111,7 +111,7 @@ class STAMPSpec extends BaseSpec {
                 }
                 counter++
             })
-            return new BaseMatrixProfile(mp, pi, rmp, lmp, rpi, lpi)
+            return new BaseMatrixProfile(0, 0, mp, pi, rmp, lmp, rpi, lpi)
         }, STAMPSpec)
     }
 }

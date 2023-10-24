@@ -44,7 +44,7 @@ public class SKIMP<S extends WindowStatistic> implements PanMatrixProfileAlgorit
         this.windows = windows;
         this.algos = new MatrixProfileAlgorithm[windows.length];
         for (int i = 0; i < windows.length; i++) {
-            algos[i] = new MPX(windows[i], numInstances, crossCorrelation);
+            algos[i] = new MPX(windows[i], numInstances, crossCorrelation, 0.5d);
         }
     }
 

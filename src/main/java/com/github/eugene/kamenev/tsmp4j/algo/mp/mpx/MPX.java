@@ -36,18 +36,19 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
 
     private final boolean crossCorrelation;
 
-    private final int minlag;
-
     private final double threshold = 0.05;
 
+    public MPX(int windowSize, int bufferSize, boolean crossCorrelation, double exclusionZone) {
+        this(new MPXRollingWindowStatistics(windowSize, bufferSize), exclusionZone,
+            crossCorrelation);
+    }
+
     public MPX(int windowSize, int bufferSize, boolean crossCorrelation) {
-        this(new MPXRollingWindowStatistics(windowSize, bufferSize),
-            (int) Math.floor(windowSize / 2.0), crossCorrelation);
+        this(new MPXRollingWindowStatistics(windowSize, bufferSize), 0.5, crossCorrelation);
     }
 
     public MPX(RollingWindowStatistics<MPXStatistic> rollingWindowStatistics) {
-        this(rollingWindowStatistics, (int) Math.floor(rollingWindowStatistics.windowSize() / 2.0),
-            false);
+        this(rollingWindowStatistics, 0.5d, false);
     }
 
     public MPX() {
@@ -55,9 +56,8 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     }
 
     public MPX(RollingWindowStatistics<MPXStatistic> rollingWindowStatistics,
-        int minlag, boolean crossCorrelation) {
-        super(rollingWindowStatistics);
-        this.minlag = minlag;
+        double exclusionZone, boolean crossCorrelation) {
+        super(rollingWindowStatistics, exclusionZone);
         this.crossCorrelation = crossCorrelation;
     }
 
@@ -69,7 +69,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
             for (double v : query) {
                 qs.apply(v);
             }
-            return compute(this.rollingStatistics(), qs, crossCorrelation);
+            return compute(this.rollingStatistics(), qs, crossCorrelation, this.exclusionZone);
         }
         return null;
     }
@@ -77,7 +77,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     @Override
     public BaseMatrixProfile get(RollingWindowStatistics<MPXStatistic> query) {
         if (isReady()) {
-            return compute(this.rollingStatistics(), query, crossCorrelation);
+            return compute(this.rollingStatistics(), query, crossCorrelation, this.exclusionZone);
         }
         return null;
     }
@@ -94,7 +94,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
             double[] mp = new double[profile_len];
             int[] mpi = new int[profile_len];
 
-            for (var diag = this.minlag; diag < profile_len; diag++) {
+            for (var diag = this.exclusionZoneSize; diag < profile_len; diag++) {
                 var c = 0.0;
                 for (int k = 0; k < w; k++) {
                     c += (sb.x(diag + k) - sb.mean(diag)) * (sb.x(k) - sb.mean(0));
@@ -124,7 +124,8 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
                     mp[i] = Math.sqrt(2.0 * w * (1.0 - mp[i]));
                 }
             }
-            return new BaseMatrixProfile(mp, mpi);
+            return new BaseMatrixProfile(sb.windowSize(), exclusionZone, mp, mpi, null, null, null,
+                null);
         }
         return null;
     }
@@ -144,21 +145,21 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     }
 
     public static BaseMatrixProfile of(double[] ts, int windowSize, boolean crossCorrelation) {
-        var mpx = new MPX(windowSize, ts.length, crossCorrelation);
+        var mpx = new MPX(windowSize, ts.length, crossCorrelation, 0.5d);
         Arrays.stream(ts)
             .forEach(mpx::update);
         return mpx.get();
     }
 
     public static BaseMatrixProfile of(double[] ts, int windowSize) {
-        var mpx = new MPX(windowSize, ts.length, false);
+        var mpx = new MPX(windowSize, ts.length, false, 0.5d);
         Arrays.stream(ts)
             .forEach(mpx::update);
         return mpx.get();
     }
 
     private static BaseMatrixProfile compute(RollingWindowStatistics<MPXStatistic> ts,
-        RollingWindowStatistics<MPXStatistic> qs, boolean crossCorrelation) {
+        RollingWindowStatistics<MPXStatistic> qs, boolean crossCorrelation, double exclusionZone) {
 
         int n = ts.dataSize();
         int qn = qs.dataSize();
@@ -186,7 +187,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
         postProcess(mp, w, crossCorrelation);
         postProcess(mpb, w, crossCorrelation);
 
-        return new BaseMatrixProfile(mp, mpi, null, mpb, null, mpib);
+        return new BaseMatrixProfile(w, exclusionZone, mp, mpi, null, mpb, null, mpib);
     }
 
     private static <S extends WindowStatistic> void computeJoin(RollingWindowStatistics<S> a,

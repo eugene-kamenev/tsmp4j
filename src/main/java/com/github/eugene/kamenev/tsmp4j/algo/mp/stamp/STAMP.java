@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.github.eugene.kamenev.tsmp4j.algo.mp.stamp;
 
 import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfile;
@@ -24,18 +41,24 @@ import org.apache.commons.math3.complex.Complex;
  */
 public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, MatrixProfile> {
 
-    public STAMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics) {
-        super(rollingWindowStatistics);
+    public STAMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics,
+        double exclusionZone) {
+        super(rollingWindowStatistics, exclusionZone);
     }
 
     public STAMP(int windowSize, int bufferSize) {
-        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize));
+        this(windowSize, bufferSize, 0.5d);
+    }
+
+    public STAMP(int windowSize, int bufferSize, double exclusionZone) {
+        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize), exclusionZone);
     }
 
     @Override
     public MatrixProfile get(RollingWindowStatistics<BaseWindowStatistic> query) {
         if (this.isReady()) {
-            return stamp(this.rollingStatistics(), query);
+            return stamp(this.rollingStatistics(), query, this.exclusionZone,
+                this.exclusionZoneSize);
         }
         return null;
     }
@@ -43,22 +66,23 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
     @Override
     public MatrixProfile get() {
         if (this.isReady()) {
-            return stamp(this.rollingStatistics(), null);
+            return stamp(this.rollingStatistics(), null, exclusionZone, exclusionZoneSize);
         }
         return null;
     }
 
     public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts,
-        RollingWindowStatistics<S> query, double exclusionZone, int sSize,
+        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize, int sSize,
         DistanceProfileFunction<S> distFunc) {
         int windowSize = ts.windowSize();
         boolean isJoin = query != null;
         if (!isJoin) {
             query = ts;
         } else {
+            exclusionZoneSize = 0;
             exclusionZone = 0;
         }
-        int exZone = (int) Math.round(windowSize * exclusionZone + Util.EPS);
+        int exZone = exclusionZoneSize;
         int dataSize = ts.dataSize();
         int querySize = query.dataSize();
         int mpSize = dataSize - windowSize + 1;
@@ -107,7 +131,8 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
         int[] sampledOrder = new int[sSize];
         System.arraycopy(order, 0, sampledOrder, 0, sSize);
         var fft = Util.forwardFft(ts, false, 0, Util.padSize(dataSize));
-        var mp = new BaseMatrixProfile(matrixProfile, profileIndex, rightMatrixProfile,
+        var mp = new BaseMatrixProfile(windowSize, exclusionZone, matrixProfile, profileIndex,
+            rightMatrixProfile,
             leftMatrixProfile, rightProfileIndex, leftProfileIndex);
         for (var i : sampledOrder) {
             computeAnytime(i, isJoin, windowSize, exZone, ts, query, mp, distFunc, fft);
@@ -175,21 +200,21 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
     }
 
     public static <S extends WindowStatistic> MatrixProfile stamp(RollingWindowStatistics<S> ts,
-        RollingWindowStatistics<S> query) {
-        return stamp(ts, query, 0.5d, Integer.MAX_VALUE, new MASS2<>());
+        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize) {
+        return stamp(ts, query, exclusionZone, exclusionZoneSize, Integer.MAX_VALUE, new MASS2<>());
     }
 
     public static MatrixProfile of(double[] ts, double[] query, int windowSize) {
-        var dataS = new BaseRollingWindowStatistics<>(windowSize, ts.length);
-        var queryS = new BaseRollingWindowStatistics<>(windowSize, query.length);
+        var dataS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, ts.length);
+        var queryS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, query.length);
         Arrays.stream(ts).forEach(dataS::apply);
         Arrays.stream(query).forEach(queryS::apply);
-        return stamp(dataS, queryS);
+        return new STAMP(dataS, 0.5d).get(queryS);
     }
 
     public static MatrixProfile of(double[] ts, int windowSize) {
-        var dataS = new BaseRollingWindowStatistics<>(windowSize, ts.length);
+        var dataS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, ts.length);
         Arrays.stream(ts).forEach(dataS::apply);
-        return stamp(dataS, null);
+        return new STAMP(dataS, 0.5d).get();
     }
 }
