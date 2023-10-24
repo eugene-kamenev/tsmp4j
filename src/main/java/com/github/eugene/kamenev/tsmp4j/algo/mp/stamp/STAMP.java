@@ -154,44 +154,21 @@ public class STAMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
         var rightMatrixProfile = matrixProfile.rightProfile();
         var rightProfileIndex = matrixProfile.rightIndexes();
 
-        if (exZone > 0) {
-            int excSt = Math.max(0, index - exZone);
-            int excEd = Math.min(mpSize - 1, index + exZone);
-            for (int k = excSt; k <= excEd; k++) {
-                dist[k] = Double.POSITIVE_INFINITY;
-            }
-        }
-
-        for (var k = 0; k < mpSize; k++) {
-            if (ts.stdDev(k) < Util.EPS || ts.skip(k) || ts.skip(index)) {
-                dist[k] = Double.POSITIVE_INFINITY;
-            }
-        }
-
-        if (query.stdDev(index) < Util.EPS) {
-            dist[index] = Double.POSITIVE_INFINITY;
-        }
-
-        if (!isJoin) {
-            // left matrixProfile
-            for (int k = index; k < mpSize; k++) {
-                if (dist[k] < leftMatrixProfile[k]) {
-                    leftMatrixProfile[k] = dist[k];
-                    leftProfileIndex[k] = index;
-                }
-            }
-
-            // right matrixProfile
-            for (int k = 0; k <= index; k++) {
-                if (dist[k] < rightMatrixProfile[k]) {
-                    rightMatrixProfile[k] = dist[k];
-                    rightProfileIndex[k] = index;
-                }
-            }
-        }
-
-        // normal matrixProfile
         for (int k = 0; k < mpSize; k++) {
+            if ((exZone > 0 && Math.abs(k - index) <= exZone) || ts.stdDev(k) < Util.EPS || ts.skip(k) || ts.skip(index)) {
+                dist[k] = Double.POSITIVE_INFINITY;
+            }
+            // left matrixProfile
+            if (!isJoin && k >= index && dist[k] < leftMatrixProfile[k]) {
+                leftMatrixProfile[k] = dist[k];
+                leftProfileIndex[k] = index;
+            }
+            // right matrixProfile
+            if (!isJoin && k <= index && dist[k] < rightMatrixProfile[k]) {
+                rightMatrixProfile[k] = dist[k];
+                rightProfileIndex[k] = index;
+            }
+            // normal matrixProfile
             if (dist[k] < profile[k]) {
                 profile[k] = dist[k];
                 profileIndex[k] = index;
