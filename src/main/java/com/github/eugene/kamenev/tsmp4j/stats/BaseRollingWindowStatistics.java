@@ -56,6 +56,7 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
         this(windowSize, (S[]) new WindowStatistic[statsBufferSize]);
     }
 
+    @SuppressWarnings("unchecked")
     public BaseRollingWindowStatistics(BaseRollingWindowStatistics<S> stats, int size) {
         this.Ex2 = stats.Ex2;
         this.Ex = stats.Ex;

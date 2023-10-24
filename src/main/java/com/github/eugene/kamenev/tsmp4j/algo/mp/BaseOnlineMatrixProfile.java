@@ -17,22 +17,21 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp;
 
-public interface MatrixProfile {
+public record BaseOnlineMatrixProfile(
+    int offset,
+    int windowSize,
+    double exclusionZone,
+    double[] profile,
+    int[] indexes,
+    double[] leftProfile,
+    double[] rightProfile,
+    int[] leftIndexes,
+    int[] rightIndexes) implements OnlineMatrixProfile {
 
-    double[] profile();
-
-    int[] indexes();
-
-    double[] rightProfile();
-
-    int[] rightIndexes();
-
-    double[] leftProfile();
-
-    int[] leftIndexes();
-
-    double exclusionZone();
-
-    int windowSize();
+    public BaseOnlineMatrixProfile(MatrixProfile profile) {
+        this(0, profile.windowSize(), profile.exclusionZone(), profile.profile(),
+            profile.indexes(), profile.leftProfile(), profile.rightProfile(),
+            profile.leftIndexes(), profile.rightIndexes());
+    }
 
 }

@@ -39,18 +39,28 @@ import java.util.Arrays;
  */
 public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, MatrixProfile> {
 
+    public STOMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics,
+        double exclusionZone) {
+        super(rollingWindowStatistics, exclusionZone);
+    }
+
     public STOMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics) {
-        super(rollingWindowStatistics);
+        super(rollingWindowStatistics, 0.5d);
     }
 
     public STOMP(int windowSize, int bufferSize) {
         this(new BaseRollingWindowStatistics<>(windowSize, bufferSize));
     }
 
+    public STOMP(int windowSize, int bufferSize, double exclusionZone) {
+        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize), exclusionZone);
+    }
+
     @Override
     public MatrixProfile get(RollingWindowStatistics<BaseWindowStatistic> query) {
         if (this.isReady()) {
-            return stomp(this.rollingStatistics(), query);
+            return stomp(this.rollingStatistics(), query, this.exclusionZone,
+                this.exclusionZoneSize);
         }
         return null;
     }
@@ -58,13 +68,14 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
     @Override
     public MatrixProfile get() {
         if (this.isReady()) {
-            return stomp(this.rollingStatistics(), null);
+            return stomp(this.rollingStatistics(), null, this.exclusionZone,
+                this.exclusionZoneSize);
         }
         return null;
     }
 
     public static <S extends WindowStatistic> MatrixProfile stomp(RollingWindowStatistics<S> ts,
-        RollingWindowStatistics<S> query, double exclusionZone,
+        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize,
         DistanceProfileFunction<S> distFunc) {
         int windowSize = ts.windowSize();
         boolean isJoin = query != null;
@@ -72,8 +83,9 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
             query = ts;
         } else {
             exclusionZone = 0;
+            exclusionZoneSize = 0;
         }
-        int exZone = (int) Math.round(windowSize * exclusionZone + Util.EPS);
+        int exZone = exclusionZoneSize;
         int dataSize = ts.dataSize();
         int querySize = query.dataSize();
         int mpSize = dataSize - windowSize + 1;
@@ -200,26 +212,27 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
             }
         }
 
-        return new BaseMatrixProfile(matrixProfile, profileIndex, rightMatrixProfile,
+        return new BaseMatrixProfile(windowSize, exclusionZone, matrixProfile, profileIndex,
+            rightMatrixProfile,
             leftMatrixProfile, rightProfileIndex, leftProfileIndex);
     }
 
     public static <S extends WindowStatistic> MatrixProfile stomp(RollingWindowStatistics<S> ts,
-        RollingWindowStatistics<S> query) {
-        return stomp(ts, query, 0.5d, new MASS2<>());
+        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize) {
+        return stomp(ts, query, exclusionZone, exclusionZoneSize, new MASS2<>());
     }
 
     public static MatrixProfile of(double[] ts, double[] query, int windowSize) {
-        var dataS = new BaseRollingWindowStatistics<>(windowSize, ts.length);
-        var queryS = new BaseRollingWindowStatistics<>(windowSize, query.length);
+        var dataS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, ts.length);
+        var queryS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, query.length);
         Arrays.stream(ts).forEach(dataS::apply);
         Arrays.stream(query).forEach(queryS::apply);
-        return stomp(dataS, queryS);
+        return stomp(dataS, queryS, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS));
     }
 
     public static MatrixProfile of(double[] ts, int windowSize) {
-        var dataS = new BaseRollingWindowStatistics<>(windowSize, ts.length);
+        var dataS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, ts.length);
         Arrays.stream(ts).forEach(dataS::apply);
-        return stomp(dataS, null);
+        return stomp(dataS, null, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS));
     }
 }
