@@ -93,12 +93,14 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
 
             double[] mp = new double[profile_len];
             int[] mpi = new int[profile_len];
-
-            for (var diag = this.exclusionZoneSize; diag < profile_len; diag++) {
+            var mean_0 = sb.mean(0);
+            for (int diag = exclusionZoneSize; diag < profile_len; diag++) {
                 var c = 0.0;
-                for (int k = 0; k < w; k++) {
-                    c += (sb.x(diag + k) - sb.mean(diag)) * (sb.x(k) - sb.mean(0));
+                var mean_diag = sb.mean(diag);
+                for (var k = 0; k < w; k++) {
+                    c += (sb.x(diag + k) - mean_diag) * (sb.x(k) - mean_0);
                 }
+
                 for (var offset = 0; offset < n - w - diag + 1; offset++) {
                     var col = offset + diag;
                     c = c + sb.df(offset) * sb.dg(col) + sb.df(col) * sb.dg(offset);
@@ -110,22 +112,20 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
                     }
 
                     if (c_cmp > mp[col]) {
-                        if (c_cmp > 1.0) {
-                            c_cmp = 1.0;
-                        }
-                        mp[col] = c_cmp;
+                        mp[col] = Math.min(c_cmp, 1.0);
                         mpi[col] = offset;
                     }
                 }
             }
 
             if (!this.crossCorrelation) {
-                for (int i = 0; i < profile_len; i++) {
-                    mp[i] = Math.sqrt(2.0 * w * (1.0 - mp[i]));
+                var win = 2.0d * w;
+                for (var i = 0; i < profile_len; i++) {
+                    mp[i] = Math.sqrt(win * (1.0 - mp[i]));
                 }
             }
-            return new BaseMatrixProfile(sb.windowSize(), exclusionZone, mp, mpi, null, null, null,
-                null);
+            return new BaseMatrixProfile(sb.windowSize(), exclusionZone, mp, mpi,
+                null, null, null, null);
         }
         return null;
     }
@@ -198,13 +198,14 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
 
         var sa = (MPXRollingWindowStatistics) a;
         var sb = (MPXRollingWindowStatistics) b;
-
+        double b_mean_0 = b.mean(0);
         for (int ia = 0; ia < amx; ia++) {
             int mx = Math.min(amx - ia, bmx);
             double c = 0;
+            double mean_ia = a.mean(ia);
 
             for (int i = 0; i < w; i++) {
-                c += (a.x(ia + i) - a.mean(ia)) * (b.x(i) - b.mean(0));
+                c += (a.x(ia + i) - mean_ia) * (b.x(i) - b_mean_0);
             }
 
             for (int ib = 0; ib < mx; ib++) {

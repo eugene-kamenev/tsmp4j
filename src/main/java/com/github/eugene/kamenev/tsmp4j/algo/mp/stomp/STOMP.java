@@ -171,50 +171,34 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
 
             dropValue = query.x(i);
 
-            if (exZone > 0) {
-                int excSt = Math.max(0, i - exZone);
-                int excEd = Math.min(mpSize - 1, i + exZone);
-                for (int k = excSt; k <= excEd; k++) {
+            for (int k = 0; k < mpSize; k++) {
+                if ((exZone > 0 && Math.abs(k - i) <= exZone) || ts.stdDev(k) < Util.EPS || ts.skip(k) || ts.skip(i)) {
                     distanceProfile[k] = Double.POSITIVE_INFINITY;
                 }
-            }
-
-            for (var k = 0; k < mpSize; k++) {
-                if (query.stdDev(i) < Util.EPS || ts.skip(i) || ts.skip(k)) {
-                    distanceProfile[k] = Double.POSITIVE_INFINITY;
+                // normal matrixProfile
+                if (distanceProfile[k] < matrixProfile[k]) {
+                    matrixProfile[k] = distanceProfile[k];
+                    profileIndex[k] = i;
                 }
-            }
 
-            if (!isJoin) {
-                // left matrixProfile
-                for (int k = i; k < mpSize; k++) {
-                    if (distanceProfile[k] < leftMatrixProfile[k]) {
+                if (!isJoin) {
+                    // left matrixProfile
+                    if (k >= i && distanceProfile[k] < leftMatrixProfile[k]) {
                         leftMatrixProfile[k] = distanceProfile[k];
                         leftProfileIndex[k] = i;
                     }
-                }
 
-                // right matrixProfile
-                for (int k = 0; k <= i; k++) {
-                    if (distanceProfile[k] < rightMatrixProfile[k]) {
+                    // right matrixProfile
+                    if (k <= i && distanceProfile[k] < rightMatrixProfile[k]) {
                         rightMatrixProfile[k] = distanceProfile[k];
                         rightProfileIndex[k] = i;
                     }
                 }
             }
-
-            // normal matrixProfile
-            for (int k = 0; k < mpSize; k++) {
-                if (distanceProfile[k] < matrixProfile[k]) {
-                    matrixProfile[k] = distanceProfile[k];
-                    profileIndex[k] = i;
-                }
-            }
         }
 
         return new BaseMatrixProfile(windowSize, exclusionZone, matrixProfile, profileIndex,
-            rightMatrixProfile,
-            leftMatrixProfile, rightProfileIndex, leftProfileIndex);
+            rightMatrixProfile, leftMatrixProfile, rightProfileIndex, leftProfileIndex);
     }
 
     public static <S extends WindowStatistic> MatrixProfile stomp(RollingWindowStatistics<S> ts,
