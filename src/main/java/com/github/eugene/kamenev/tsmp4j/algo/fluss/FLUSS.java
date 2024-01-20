@@ -110,6 +110,36 @@ public class FLUSS implements Function<MatrixProfile, FLUSSCP> {
         return correctedArcCounts;
     }
 
+    /**
+     * Calculates the score of predicted semantic transitions compared with the ground truth.
+     * @param gtruth
+     * @param extracted
+     * @param dataLength
+     * @return score, closer to 0 is best
+     */
+    public static double score(int[] gtruth, int[] extracted, int dataLength) {
+        int n = gtruth.length;
+        double[] minv = new double[n];
+
+        for (int j = 0; j < n; j++) {
+            minv[j] = Double.POSITIVE_INFINITY;
+            for (int k : extracted) {
+                if (Math.abs(k - gtruth[j]) < Math.abs(minv[j])) {
+                    minv[j] = Math.abs(k - gtruth[j]);
+                }
+            }
+        }
+
+        double score = 0.0;
+        for (int j = 0; j < n; j++) {
+            score += minv[j];
+        }
+
+        score /= dataLength;
+
+        return score;
+    }
+
     private static int minIndexExcluding(double[] array, Set<Integer> excludedIndices) {
         int minIndex = -1;
         double minValue = Double.POSITIVE_INFINITY;
