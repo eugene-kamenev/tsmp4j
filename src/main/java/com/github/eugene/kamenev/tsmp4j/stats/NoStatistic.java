@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 
-package com.github.eugene.kamenev.tsmp4j.algo.mp;
+package com.github.eugene.kamenev.tsmp4j.stats;
 
-public record BaseMatrixProfile(
-    int windowSize,
-    double exclusionZone,
-    double[] profile,
-    int[] indexes,
-    double[] rightProfile,
-    double[] leftProfile,
-    int[] rightIndexes,
-    int[] leftIndexes
+public record NoStatistic(double x, long id) implements WindowStatistic {
 
-) implements MatrixProfile {
+    @Override
+    public double mean() {
+        throw new UnsupportedOperationException();
+    }
 
-    public BaseMatrixProfile(int windowSize, double exclusionZone,
-        double[] profile, int[] indexes) {
-        this(windowSize, exclusionZone, profile, indexes, null, null, null, null);
+    @Override
+    public double stdDev() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean skip() {
+        return false;
     }
 }
