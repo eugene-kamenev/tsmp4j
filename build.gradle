@@ -34,12 +34,43 @@ publishing {
     publications {
         maven(MavenPublication) {
             from components.java
+            pom {
+                name = 'TSMP4J'
+                description = 'Time Series with Matrix Profile in Java'
+                url = 'https://github.com/eugene-kamenev/tsmp4j'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'eugene-kamenev'
+                        name = 'Eugene Kamenev'
+                        email = 'eugene.kamenev at gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/eugene-kamenev/tsmp4j.git'
+                    url = 'https://github.com/eugene-kamenev/tsmp4j'
+                }
+            }
         }
     }
     repositories {
         maven {
             // Set the URL to your repository (local or remote)
             mavenLocal()
+        }
+
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/eugene-kamenev/tsmp4j")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.password") ?: System.getenv("TOKEN")
+            }
         }
     }
 }
