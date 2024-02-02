@@ -207,16 +207,13 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
     }
 
     public static MatrixProfile of(double[] ts, double[] query, int windowSize) {
-        var dataS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, ts.length);
-        var queryS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, query.length);
-        Arrays.stream(ts).forEach(dataS::apply);
-        Arrays.stream(query).forEach(queryS::apply);
+        var dataS = BaseRollingWindowStatistics.<BaseWindowStatistic>of(ts, windowSize);
+        var queryS = BaseRollingWindowStatistics.<BaseWindowStatistic>of(query, windowSize);
         return stomp(dataS, queryS, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS));
     }
 
     public static MatrixProfile of(double[] ts, int windowSize) {
-        var dataS = new BaseRollingWindowStatistics<BaseWindowStatistic>(windowSize, ts.length);
-        Arrays.stream(ts).forEach(dataS::apply);
+        var dataS = BaseRollingWindowStatistics.<BaseWindowStatistic>of(ts, windowSize);
         return stomp(dataS, null, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS));
     }
 }

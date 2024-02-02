@@ -64,11 +64,7 @@ public class MPX extends BaseMatrixProfileAlgorithm<MPXStatistic, BaseMatrixProf
     @Override
     public BaseMatrixProfile get(double[] query) {
         if (this.isReady()) {
-            var qs = new MPXRollingWindowStatistics(this.rollingStatistics().windowSize(),
-                query.length);
-            for (double v : query) {
-                qs.apply(v);
-            }
+            var qs = MPXRollingWindowStatistics.of(query, this.rollingStatistics().windowSize());
             return compute(this.rollingStatistics(), qs, crossCorrelation, this.exclusionZone);
         }
         return null;
