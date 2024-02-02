@@ -16,6 +16,15 @@
     </license>
   </licenses>
 
+  <!-- specific to our build -->
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/bruxless/tsmp4j</url>
+    </repository>
+  </distributionManagement>
+
   <properties>
 
     <project.build.javaVersion>17</project.build.javaVersion>
