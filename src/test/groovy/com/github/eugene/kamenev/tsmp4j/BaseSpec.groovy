@@ -17,6 +17,23 @@ class BaseSpec extends Specification {
      */
     public static double ERROR = Math.pow(10, -11);
 
+    public static double[][] load2D(String file, Class clazz, int skip = 1) {
+        clazz.getResource(file).readLines().stream()
+            .skip(skip)
+            .filter(s -> !s.trim().isEmpty())
+            .map(it -> Arrays.stream(it.split(','))
+            .mapToDouble(s -> Double.parseDouble(s)).toArray())
+            .toArray(double[][]::new);
+    }
+
+    public static double[] load1D(String file, Class clazz, int skip = 1) {
+        clazz.getResource(file).readLines().stream()
+            .skip(skip)
+            .filter(s -> !s.trim().isEmpty())
+            .mapToDouble(it -> Double.parseDouble(it))
+            .toArray();
+    }
+
     public static final List<ToyData> data = loadData('mp_toy_data.csv', (rows) -> {
         return Arrays.stream(rows).map(s -> {
             return new ToyData(s[0] as double, s[1] as double, s[2] as double)
