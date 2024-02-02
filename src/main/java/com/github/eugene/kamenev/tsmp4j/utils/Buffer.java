@@ -73,6 +73,11 @@ public abstract class Buffer {
             }
         }
 
+        public ObjBuffer(int size) {
+            super(size);
+            this.buff = (T[]) new Object[size];
+        }
+
         public void addToEnd(T val) {
             if (mCnt < mSize) {
                 buff[mCnt] = val;

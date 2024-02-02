@@ -36,12 +36,7 @@ public interface MatrixProfileAlgorithm<S extends WindowStatistic, M extends Mat
     @SuppressWarnings("unchecked")
     default M get(double[] query) {
         if (this.isReady()) {
-            var qs = new BaseRollingWindowStatistics<>(this.rollingStatistics().windowSize(),
-                query.length);
-            for (double v : query) {
-                qs.apply(v);
-            }
-            return this.get((RollingWindowStatistics<S>) qs);
+            return this.get(BaseRollingWindowStatistics.of(query,this.rollingStatistics().windowSize()));
         }
         return null;
     }

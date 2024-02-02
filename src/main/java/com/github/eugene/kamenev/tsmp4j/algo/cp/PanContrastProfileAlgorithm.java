@@ -44,12 +44,8 @@ public class PanContrastProfileAlgorithm implements
 
         for (var i = 0; i < subLenSeries.length; i++) {
             var winSize = subLenSeries[i];
-            var positiveStats = new MPXRollingWindowStatistics(winSize,
-                positiveTS.length);
-            var negativeStats = new MPXRollingWindowStatistics(winSize,
-                negativeTS.length);
-            Arrays.stream(positiveTS).forEach(positiveStats::apply);
-            Arrays.stream(negativeTS).forEach(negativeStats::apply);
+            var positiveStats = MPXRollingWindowStatistics.of(positiveTS, winSize);
+            var negativeStats = MPXRollingWindowStatistics.of(negativeTS, winSize);
             contrastProfile[i] = new ContrastProfileAlgorithm().apply(positiveStats, negativeStats);
         }
 
