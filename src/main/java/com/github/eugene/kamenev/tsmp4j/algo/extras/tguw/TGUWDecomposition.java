@@ -223,7 +223,7 @@ public record TGUWDecomposition(
             twoTogether = new ArrayList<>(twoTogether.size());
             var ini = 1;
             var j = 0;
-            while (j < twotogether.size()) {
+            while (j < twotogether.size() - 1) {
                 var prev = (int) twotogether.get(j);
                 var curr = (int) twotogether.get(j + 1);
                 if (prev != 0 && prev == curr) {
@@ -267,7 +267,7 @@ public record TGUWDecomposition(
         var diff = IntStream.range(0, estimate.length)
             .mapToDouble(i -> x[i] - estimate[i])
             .toArray();
-        var kurt = 1.0;
+        var kurt = 1.3;
         if (useKurtosis) {
             kurt = Utils.calculateKurtosis(diff);
         }
@@ -282,7 +282,7 @@ public record TGUWDecomposition(
 
         // Calculate the long run standard deviation
         double longsd = Math.sqrt((1 + rhohat) / (1 - rhohat));
-        return kurt * 1.3 * 1.3 * longsd;
+        return kurt * 1.3 * longsd;
     }
 
     /**

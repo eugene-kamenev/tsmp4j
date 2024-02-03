@@ -94,7 +94,6 @@ public class TGUW {
         Arrays.fill(weightsConst, 1);
         this.tsCoeffs = Arrays.copyOf(x, x.length);
         this.weightsLin = IntStream.rangeClosed(1, n).asDoubleStream().toArray();
-        this.details = new double[n - 2];
         this.idx = new TreeSet<>(IntStream.rangeClosed(1, n).boxed().toList());
         this.paired = new TreeSet<>();
         this.edges = new ArrayList<>(numberOfEdges);
@@ -195,6 +194,10 @@ public class TGUW {
             numberOfEdges = edges.size();
             currentStep += noOfCurrentSteps;
             stepsLeft -= noOfCurrentSteps;
+
+            if (numberOfEdges == 1) {
+                edges.get(0)[3] = 0;
+            }
         }
     }
 
@@ -277,7 +280,9 @@ public class TGUW {
             }
         } else {
             // If the indexes list is empty, apply a filter operation on all edges
+            var details = new double[edges.size()];
             filter(edges, details,null, null, null, null,  null, null);
+            this.details = details;
         }
     }
 
@@ -400,9 +405,6 @@ public class TGUW {
         if (h == null) {
             h = new double[len][];
         }
-        if (details == null) {
-            details = new double[len];
-        }
         for (int i = 0, j = 0; i < len; i++) {
             int edgeIndex = row == null ? j++ : row[i] - 1;
             int[] e = edges.get(edgeIndex);
@@ -506,15 +508,15 @@ public class TGUW {
             boolean isEdgeRemoved = edge[3] > 0;
             int sum = sumNodes(edge);
             var next = tei + 1;
-            var nextEdge = edges.get(next);
-            if (isEdgeRemoved) {
+            var nextEdge = next < edges.size() ? edges.get(next) : null;
+            if (isEdgeRemoved && nextEdge != null) {
                 sum += sumNodes(nextEdge);
             }
 
             if (sum == (isEdgeRemoved ? 6 : 3)) {
                 removedIndexes.add(index);
                 removeNodes(edge);
-                if (isEdgeRemoved) {
+                if (isEdgeRemoved && nextEdge != null) {
                     index = ordDet[next];
                     removeNodes(nextEdge);
                     removedIndexes.add(index);
