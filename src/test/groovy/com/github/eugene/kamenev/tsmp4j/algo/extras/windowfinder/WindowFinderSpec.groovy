@@ -1,4 +1,4 @@
-package com.github.eugene.kamenev.tsmp4j.algo.windowfinder
+package com.github.eugene.kamenev.tsmp4j.algo.extras.windowfinder
 
 import com.github.eugene.kamenev.tsmp4j.BaseSpec
 

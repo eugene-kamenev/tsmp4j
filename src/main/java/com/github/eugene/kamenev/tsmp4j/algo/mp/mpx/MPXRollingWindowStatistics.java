@@ -59,4 +59,12 @@ public class MPXRollingWindowStatistics extends BaseRollingWindowStatistics<MPXS
         }
         return this.getStatsBuffer().get(shiftIndex(i)).dg();
     }
+
+    public static MPXRollingWindowStatistics of(double[] ts, int windowSize) {
+        var stats = new MPXRollingWindowStatistics(windowSize, ts.length);
+        for (double t : ts) {
+            stats.apply(t);
+        }
+        return stats;
+    }
 }

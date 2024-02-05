@@ -134,4 +134,12 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     private double getPopulationVariance() {
         return (Ex2 - Ex * Ex / n) / n;
     }
+
+    public  static <T extends WindowStatistic> BaseRollingWindowStatistics<T> of(double[] x, int windowSize) {
+        var stats = new BaseRollingWindowStatistics<T>(windowSize, x.length);
+        for (var value : x) {
+            stats.apply(value);
+        }
+        return stats;
+    }
 }

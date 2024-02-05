@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.github.eugene.kamenev.tsmp4j.algo.windowfinder;
+package com.github.eugene.kamenev.tsmp4j.algo.extras.windowfinder;
 
 import java.util.ArrayList;
 

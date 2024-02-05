@@ -11,26 +11,33 @@ In particular, it has implications for time series motif discovery, time series 
 discovery (classification), density estimation, semantic segmentation, visualization, rule
 discovery, clustering etc.
 
-This library includes the following algorithms:
+This library includes the following algorithms to compute matrix profile:
 
-1. [STAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stamp/STAMP.java)
-2. [STOMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stomp/STOMP.java)
-3. [STOMPI](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stompi/STOMPI.java)
-4. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java)
-5. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java)
-6. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java)
+Z-Normalized Euclidean Distance:
+1. [STAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stamp/STAMP.java) - Anytime matrix profile algorithm
+2. [STOMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stomp/STOMP.java) - Scalable ordered matrix profile algorithm
+3. [STOMPI](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/stompi/STOMPI.java) - Incremental matrix profile algorithm
+4. [SKIMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/pmp/SKIMP.java) - Pan matrix profile algorithm
+5. [MPX](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mpx/MPX.java) - Matrix profile algorithm not based on FFT
+6. [MP-DIST (MASS2)](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/mass/MASS2.java) - Fast distance search algorithm based on FFT
 7. [ContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/ContrastProfileAlgorithm.java)
 8. [PanContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/PanContrastProfileAlgorithm.java)
 9. [RelativeFrequencyMatrixProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyMatrixProfileAlgorithm.java)
 10. [RelativeFrequencyContrastProfile](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyContrastProfileAlgorithm.java)
-11. [FLUSS](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/fluss/FLUSS.java)
-12. [AAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/aamp/AAMP.java)
-13. [MWF](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/windowfinder/MWF.java)
+11. [FLUSS](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/fluss/FLUSS.java) - timeseries segmentation based on matrix profile
+
+Pure Euclidean Distance:
+1. [AAMP](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/mp/aamp/AAMP.java)
+
+Additionally, this library includes extra algorithms not related to matrix profile:
+1. [MWF](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/extras/windowfinder/MWF.java) - Domain agnostic window size finder
+2. [trendSegmentR](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/extras/tguw/Trend.java) - Detection of linear trend changes for univariate time series
+3. [TGUW](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/extras/tguw/TGUW.java) - Tail-Greedy Unbalance Haar Wavelet decomposition
 
 More algorithms will be added in the future.
 
 ## Usage
-All algorithms here are built around [RollingWindowStatistics](/src/main/java/com/github/eugene/kamenev/tsmp4j/stats/RollingWindowStatistics.java) object. 
+All algorithms for matrix profile are built around [RollingWindowStatistics](/src/main/java/com/github/eugene/kamenev/tsmp4j/stats/RollingWindowStatistics.java) object. 
 It simply computes statistics required to run Matrix Profile algorithms on the fly, in a circular buffer manner, hence allows streaming data processing out of the box.
 
 ### Streaming case
@@ -52,3 +59,5 @@ var w = 10; // window for MP algorithm
 var matrixProfile = STAMP.of(data, w);
 
 ```
+
+Please refer to [tests](/src/test/groovy/com/github/eugene/kamenev/tsmp4j/algo) for more examples.
