@@ -13,7 +13,7 @@ class AAMPSpec extends BaseSpec {
             var checkMp = loadMP('aamp_self_join.csv', AAMPSpec)
 
             when:
-            var aamp = new AAMP(new RollingWindowWithoutStatistics(windowSize, new NoStatistic[limit]), 2)
+            var aamp = new AAMP(new RollingWindowWithoutStatistics(windowSize, limit), 2)
 
             data.stream()
                 .limit(limit)

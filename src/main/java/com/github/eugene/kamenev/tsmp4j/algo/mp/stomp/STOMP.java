@@ -17,12 +17,13 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.mp.stomp;
 
-import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfile;
+import static com.github.eugene.kamenev.tsmp4j.algo.mp.stomp.RangeIndexMatrixProfile.minSoFar;
+
 import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfileAlgorithm;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.DistanceProfileFunction.DistanceProfileQuery;
-import com.github.eugene.kamenev.tsmp4j.algo.mp.MatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.mass.MASS2;
+import com.github.eugene.kamenev.tsmp4j.algo.mp.stomp.RangeIndexMatrixProfile.RangeIndex;
 import com.github.eugene.kamenev.tsmp4j.stats.BaseRollingWindowStatistics;
 import com.github.eugene.kamenev.tsmp4j.stats.BaseWindowStatistic;
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
@@ -37,45 +38,61 @@ import java.util.Arrays;
  * Reference Website: <a
  * href="http://www.cs.ucr.edu/~eamonn/MatrixProfile.html">MatrixProfile.html</a>
  */
-public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, MatrixProfile> {
+public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, RangeIndexMatrixProfile> {
+
+    private final boolean computeRangeIndex;
 
     public STOMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics,
-        double exclusionZone) {
+        double exclusionZone, boolean computeRangeIndex) {
         super(rollingWindowStatistics, exclusionZone);
+        this.computeRangeIndex = computeRangeIndex;
     }
 
-    public STOMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics) {
+    public STOMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics, double exclusionZone) {
+        this(rollingWindowStatistics, exclusionZone, false);
+    }
+
+    public STOMP(RollingWindowStatistics<BaseWindowStatistic> rollingWindowStatistics, boolean computeRangeIndex) {
         super(rollingWindowStatistics, 0.5d);
+        this.computeRangeIndex = computeRangeIndex;
     }
 
     public STOMP(int windowSize, int bufferSize) {
-        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize));
+        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize), false);
+    }
+
+    public STOMP(int windowSize, int bufferSize, boolean computeRangeIndex) {
+        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize), computeRangeIndex);
     }
 
     public STOMP(int windowSize, int bufferSize, double exclusionZone) {
-        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize), exclusionZone);
+        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize), exclusionZone, false);
+    }
+
+    public STOMP(int windowSize, int bufferSize, double exclusionZone, boolean computeRangeIndex) {
+        this(new BaseRollingWindowStatistics<>(windowSize, bufferSize), exclusionZone, computeRangeIndex);
     }
 
     @Override
-    public MatrixProfile get(RollingWindowStatistics<BaseWindowStatistic> query) {
+    public RangeIndexMatrixProfile get(RollingWindowStatistics<BaseWindowStatistic> query) {
         if (this.isReady()) {
             return stomp(this.rollingStatistics(), query, this.exclusionZone,
-                this.exclusionZoneSize);
+                this.exclusionZoneSize, false);
         }
         return null;
     }
 
     @Override
-    public MatrixProfile get() {
+    public RangeIndexMatrixProfile get() {
         if (this.isReady()) {
             return stomp(this.rollingStatistics(), null, this.exclusionZone,
-                this.exclusionZoneSize);
+                this.exclusionZoneSize, this.computeRangeIndex);
         }
         return null;
     }
 
-    public static <S extends WindowStatistic> MatrixProfile stomp(RollingWindowStatistics<S> ts,
-        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize,
+    public static <S extends WindowStatistic> RangeIndexMatrixProfile stomp(RollingWindowStatistics<S> ts,
+        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize, boolean computeRangeIndex,
         DistanceProfileFunction<S> distFunc) {
         int windowSize = ts.windowSize();
         boolean isJoin = query != null;
@@ -89,6 +106,7 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
         int dataSize = ts.dataSize();
         int querySize = query.dataSize();
         int mpSize = dataSize - windowSize + 1;
+        int mpBound = mpSize - 1;
         int numQueries = querySize - windowSize + 1;
         if (querySize > dataSize) {
             throw new IllegalArgumentException(
@@ -112,6 +130,14 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
             rightMatrixProfile = new double[matrixProfile.length];
             leftProfileIndex = new int[matrixProfile.length];
             rightProfileIndex = new int[matrixProfile.length];
+
+        }
+        RangeIndex[] subToLeft = null, subToRight = null, leftToRight = null, rightToLeft = null;
+        if (computeRangeIndex) {
+            subToLeft = new RangeIndex[mpSize];
+            subToRight = new RangeIndex[mpSize];
+            leftToRight = new RangeIndex[mpSize];
+            rightToLeft = new RangeIndex[mpSize];
         }
 
         for (int i = 0; i < mpSize; i++) {
@@ -171,9 +197,23 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
 
             dropValue = query.x(i);
 
+            boolean rangeIndexHandled = false;
+
             for (int k = 0; k < mpSize; k++) {
                 if ((exZone > 0 && Math.abs(k - i) <= exZone) || ts.stdDev(k) < Util.EPS || ts.skip(k) || ts.skip(i)) {
                     distanceProfile[k] = Double.POSITIVE_INFINITY;
+                } else if (computeRangeIndex && k - i >= exZone && !rangeIndexHandled) {
+                    if (i == 0) {
+                        subToRight[0] = minSoFar(distanceProfile, 0, mpBound);
+                        leftToRight[0] = minSoFar(distanceProfile, 0, mpBound);
+                        rightToLeft[0] = minSoFar(distanceProfile, mpBound, 1);
+                    } else {
+                        subToLeft[i] = minSoFar(distanceProfile, i, 0);
+                        subToRight[i] = minSoFar(distanceProfile, i, mpBound);
+                        leftToRight[i] = minSoFar(distanceProfile, 0, mpBound);
+                        rightToLeft[i] = minSoFar(distanceProfile, mpBound, 1);
+                    }
+                    rangeIndexHandled = true;
                 }
                 // normal matrixProfile
                 if (distanceProfile[k] < matrixProfile[k]) {
@@ -197,23 +237,23 @@ public class STOMP extends BaseMatrixProfileAlgorithm<BaseWindowStatistic, Matri
             }
         }
 
-        return new BaseMatrixProfile(windowSize, exclusionZone, matrixProfile, profileIndex,
-            rightMatrixProfile, leftMatrixProfile, rightProfileIndex, leftProfileIndex);
+        return new RangeIndexMatrixProfile(windowSize, exclusionZone, matrixProfile, profileIndex,
+            rightMatrixProfile, leftMatrixProfile, rightProfileIndex, leftProfileIndex, subToLeft, subToRight, leftToRight, rightToLeft);
     }
 
-    public static <S extends WindowStatistic> MatrixProfile stomp(RollingWindowStatistics<S> ts,
-        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize) {
-        return stomp(ts, query, exclusionZone, exclusionZoneSize, new MASS2<>());
+    public static <S extends WindowStatistic> RangeIndexMatrixProfile stomp(RollingWindowStatistics<S> ts,
+        RollingWindowStatistics<S> query, double exclusionZone, int exclusionZoneSize, boolean computeRangeIndex) {
+        return stomp(ts, query, exclusionZone, exclusionZoneSize, computeRangeIndex, new MASS2<>());
     }
 
-    public static MatrixProfile of(double[] ts, double[] query, int windowSize) {
+    public static RangeIndexMatrixProfile of(double[] ts, double[] query, int windowSize) {
         var dataS = BaseRollingWindowStatistics.<BaseWindowStatistic>of(ts, windowSize);
         var queryS = BaseRollingWindowStatistics.<BaseWindowStatistic>of(query, windowSize);
-        return stomp(dataS, queryS, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS));
+        return stomp(dataS, queryS, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS), false);
     }
 
-    public static MatrixProfile of(double[] ts, int windowSize) {
+    public static RangeIndexMatrixProfile of(double[] ts, int windowSize) {
         var dataS = BaseRollingWindowStatistics.<BaseWindowStatistic>of(ts, windowSize);
-        return stomp(dataS, null, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS));
+        return stomp(dataS, null, 0.5d, (int) Math.floor(windowSize * 0.5d + Util.EPS), false);
     }
 }
