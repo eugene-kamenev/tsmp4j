@@ -27,9 +27,9 @@ public class RollingWindowWithoutStatistics implements RollingWindowStatistics<N
     private final Buffer.ObjBuffer<NoStatistic> statsBuffer;
     private long totalDataCount = 0;
 
-    public RollingWindowWithoutStatistics(int windowSize, NoStatistic[] statsBuffer) {
+    public RollingWindowWithoutStatistics(int windowSize, int bufferSize) {
         this.dataBuffer = new DoubleBuffer(windowSize);
-        this.statsBuffer = new ObjBuffer<>(statsBuffer);
+        this.statsBuffer = new ObjBuffer<>(bufferSize);
     }
 
     @Override
@@ -49,5 +49,13 @@ public class RollingWindowWithoutStatistics implements RollingWindowStatistics<N
         var stat = new NoStatistic(value, this.totalDataCount);
         this.statsBuffer.addToEnd(stat);
         return stat;
+    }
+
+    public static RollingWindowWithoutStatistics of(double[] x, int winLen) {
+        var rs = new RollingWindowWithoutStatistics(winLen, x.length);
+        for (var v : x) {
+            rs.apply(v);
+        }
+        return rs;
     }
 }

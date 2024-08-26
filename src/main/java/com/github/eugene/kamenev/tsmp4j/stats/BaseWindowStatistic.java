@@ -24,6 +24,7 @@ package com.github.eugene.kamenev.tsmp4j.stats;
  * @param mean   mean value of the window
  * @param stdDev standard deviation of the window
  * @param id     index in original data stream
+ * @param skip   flag to skip this data point
  */
 public record BaseWindowStatistic(double x, double mean, double stdDev, long id,
                                   boolean skip) implements

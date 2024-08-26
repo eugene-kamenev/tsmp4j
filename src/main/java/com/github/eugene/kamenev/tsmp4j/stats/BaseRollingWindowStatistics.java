@@ -28,8 +28,8 @@ import com.github.eugene.kamenev.tsmp4j.utils.Buffer.ObjBuffer;
  * href="https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Computing_shifted_data">Computing
  * shifted data</a>
  */
-public class BaseRollingWindowStatistics<S extends WindowStatistic>
-    implements RollingWindowStatistics<S> {
+public class BaseRollingWindowStatistics<S extends WindowStatistic> implements
+    RollingWindowStatistics<S> {
 
     private final Buffer.DoubleBuffer dataBuffer;
     private final Buffer.ObjBuffer<S> statsBuffer;
@@ -42,8 +42,7 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
     private int toSkip = 0;
 
     public BaseRollingWindowStatistics(int windowSize, S[] statsBuffer) {
-        this.dataBuffer = new DoubleBuffer(windowSize);
-        this.statsBuffer = new ObjBuffer<>(statsBuffer);
+        this(windowSize, statsBuffer, false);
     }
 
     public BaseRollingWindowStatistics(int windowSize, S[] statsBuffer, boolean isFull) {
@@ -56,20 +55,26 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
         this(windowSize, (S[]) new WindowStatistic[statsBufferSize]);
     }
 
-    @SuppressWarnings("unchecked")
     public BaseRollingWindowStatistics(BaseRollingWindowStatistics<S> stats, int size) {
+        this(stats, size, stats.statsBuffer.size() - size);
+    }
+
+    @SuppressWarnings("unchecked")
+    private BaseRollingWindowStatistics(BaseRollingWindowStatistics<S> stats, int size, int skip) {
+        this.dataBuffer = new DoubleBuffer(stats.dataBuffer);
+        this.statsBuffer = new ObjBuffer<>((S[]) new WindowStatistic[size]);
+
         this.Ex2 = stats.Ex2;
         this.Ex = stats.Ex;
         this.K = stats.K;
         this.n = stats.n;
         this.toSkip = stats.toSkip;
         this.totalDataCount = stats.totalDataCount;
-        this.dataBuffer = new DoubleBuffer(stats.dataBuffer);
-        this.statsBuffer = new ObjBuffer<>((S[]) new WindowStatistic[size]);
-            stats.getStatsBuffer().toStream()
-                .skip(stats.statsBuffer.size() - size)
-                .limit(size)
-                .forEach(this.statsBuffer::addToEnd);
+
+        stats.getStatsBuffer().toStream()
+            .skip(skip)
+            .limit(size)
+            .forEach(this.statsBuffer::addToEnd);
     }
 
     @Override
@@ -86,10 +91,15 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
         }
         this.dataBuffer.addToEnd(value);
         this.addValue(value);
-        var mean = getMean();
-        var populationVariance = getPopulationVariance();
-        var stat = computeStats(value, mean, Math.sqrt(Math.max(0, populationVariance)),
-            populationVariance, totalDataCount, toSkip > 0);
+
+        S stat = computeStats(
+            value,
+            getMean(),
+            getStandardDeviation(),
+            getPopulationVariance(),
+            totalDataCount,
+            toSkip > 0
+        );
         getStatsBuffer().addToEnd(stat);
         return stat;
     }
@@ -129,6 +139,10 @@ public class BaseRollingWindowStatistics<S extends WindowStatistic>
 
     private double getMean() {
         return K + Ex / n;
+    }
+
+    private double getStandardDeviation() {
+        return Math.sqrt(Math.max(0, getPopulationVariance()));
     }
 
     private double getPopulationVariance() {
