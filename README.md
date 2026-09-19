@@ -60,4 +60,4 @@ var matrixProfile = STAMP.of(data, w);
 
 ```
 
-Please refer to [tests](/src/test/groovy/com/github/eugene/kamenev/tsmp4j/algo) for more examples.
+Please refer to [tests](/src/test/java/com/github/eugene/kamenev/tsmp4j/algo) for more examples.
