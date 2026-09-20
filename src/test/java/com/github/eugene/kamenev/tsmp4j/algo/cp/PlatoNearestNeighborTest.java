@@ -50,6 +50,36 @@ class PlatoNearestNeighborTest {
     }
 
     @Test
+    void emptyPatternMatchesTrivially() {
+        assertEquals(0.0d,
+            PlatoNearestNeighbor.minDistance(series(60, 3L, 0.0d, 5.0d), new double[0]), 0.0d);
+        assertEquals(0.0d,
+            PlatoNearestNeighbor.minDistance(new double[0], new double[0]), 0.0d);
+    }
+
+    @Test
+    void keepsRunningStatisticsFiniteAtExtremeMagnitudes() {
+        // Every window sits on a value so large that (low + high) / 2 overflows to infinity: the
+        // running residuals must be carried around a midpoint that stays representable.
+        var extreme = Double.MAX_VALUE * 0.9d;
+        var constantQuery = new double[60];
+        Arrays.fill(constantQuery, extreme);
+        var constantPlato = new double[20];
+        Arrays.fill(constantPlato, extreme);
+
+        assertEquals(0.0d,
+            PlatoNearestNeighbor.minDistance(constantQuery, constantPlato), 1e-9d);
+
+        var alternating = new double[20];
+        for (int i = 0; i < alternating.length; i++) {
+            alternating[i] = i % 2 == 0 ? 1.0d : -1.0d;
+        }
+        var distance = PlatoNearestNeighbor.minDistance(constantQuery, alternating);
+        assertTrue(Double.isFinite(distance));
+        assertEquals(Math.sqrt(alternating.length), distance, 1e-9d);
+    }
+
+    @Test
     void treatsNearConstantWindowAsConstant() {
         var pattern = new double[20];
         for (int i = 0; i < pattern.length; i++) {

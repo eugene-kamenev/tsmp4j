@@ -63,7 +63,7 @@ final class PlatoNearestNeighbor {
 
     /**
      * @return the smallest z-normalized Euclidean distance between {@code pattern} and any
-     * subsequence of {@code query}
+     * subsequence of {@code query}; an empty {@code pattern} matches trivially and yields zero
      * @throws IllegalArgumentException if {@code query} is shorter than {@code pattern}
      */
     static double minDistance(double[] query, double[] pattern) {
@@ -71,6 +71,9 @@ final class PlatoNearestNeighbor {
         if (query.length < m) {
             throw new IllegalArgumentException(
                 "Query of length " + query.length + " is shorter than the plato of length " + m);
+        }
+        if (m == 0) {
+            return 0.0d;
         }
         double[] normalizedPattern = zNormalize(pattern);
         // Z-normalization is shift invariant, so the scan carries its running statistics on
@@ -83,7 +86,9 @@ final class PlatoNearestNeighbor {
             low = Math.min(low, v);
             high = Math.max(high, v);
         }
-        double reference = (low + high) / 2.0d;
+        // low + (high - low) / 2 rather than (low + high) / 2: the latter overflows to infinity
+        // when both bounds are near Double.MAX_VALUE, which would poison every residual.
+        double reference = low + (high - low) / 2.0d;
         double residualSum = 0.0d;
         for (int i = 0; i < m; i++) {
             residualSum += query[i] - reference;
@@ -138,7 +143,7 @@ final class PlatoNearestNeighbor {
             low = Math.min(low, v);
             high = Math.max(high, v);
         }
-        double reference = (low + high) / 2.0d;
+        double reference = low + (high - low) / 2.0d;
         double mean = 0.0d;
         for (double v : data) {
             mean += v - reference;

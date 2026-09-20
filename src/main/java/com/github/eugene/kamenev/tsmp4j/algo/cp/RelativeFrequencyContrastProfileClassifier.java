@@ -76,6 +76,7 @@ public final class RelativeFrequencyContrastProfileClassifier {
      * @return the index of the class whose plato is closest to the query
      */
     public int classify(double[] query) {
+        requireQueryable(query);
         return PlatoNearestNeighbor.classify(query, platos);
     }
 
@@ -83,7 +84,15 @@ public final class RelativeFrequencyContrastProfileClassifier {
      * @return minimum distance from the query to every class plato
      */
     public double[] distances(double[] query) {
+        requireQueryable(query);
         return PlatoNearestNeighbor.distances(query, platos);
+    }
+
+    private void requireQueryable(double[] query) {
+        if (query == null || query.length < windowSize) {
+            throw new IllegalArgumentException(
+                "Query must be non-null and at least windowSize (" + windowSize + ") long");
+        }
     }
 
     public int numClasses() {
@@ -102,6 +111,10 @@ public final class RelativeFrequencyContrastProfileClassifier {
      * @return a copy of the discriminative subsequence extracted for the given class
      */
     public double[] plato(int classIndex) {
+        if (classIndex < 0 || classIndex >= platos.length) {
+            throw new IllegalArgumentException(
+                "classIndex " + classIndex + " out of range [0, " + platos.length + ")");
+        }
         return Arrays.copyOf(platos[classIndex], platos[classIndex].length);
     }
 }

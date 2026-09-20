@@ -161,13 +161,49 @@ class ContrastProfileClassifierTest extends com.github.eugene.kamenev.tsmp4j.Bas
     }
 
     @Test
-    void classifiersRejectQueryShorterThanWindow() {
+    void classifiersRejectInvalidQueries() {
         var training = trainSeries();
         var classifier = new ContrastProfileClassifier(WINDOW, training);
+        var relativeFrequency =
+            new RelativeFrequencyContrastProfileClassifier(WINDOW, 3, training);
+
         var shortQuery = new double[WINDOW - 1];
+        var emptyQuery = new double[0];
 
         assertThrows(IllegalArgumentException.class, () -> classifier.classify(shortQuery));
         assertThrows(IllegalArgumentException.class, () -> classifier.distances(shortQuery));
+        assertThrows(IllegalArgumentException.class, () -> classifier.classify(null));
+        assertThrows(IllegalArgumentException.class, () -> classifier.distances(null));
+        assertThrows(IllegalArgumentException.class, () -> classifier.classify(emptyQuery));
+        assertThrows(IllegalArgumentException.class, () -> classifier.distances(emptyQuery));
+
+        assertThrows(IllegalArgumentException.class, () -> relativeFrequency.classify(shortQuery));
+        assertThrows(IllegalArgumentException.class, () -> relativeFrequency.distances(shortQuery));
+        assertThrows(IllegalArgumentException.class, () -> relativeFrequency.classify(null));
+        assertThrows(IllegalArgumentException.class, () -> relativeFrequency.distances(null));
+        assertThrows(IllegalArgumentException.class, () -> relativeFrequency.classify(emptyQuery));
+        assertThrows(IllegalArgumentException.class, () -> relativeFrequency.distances(emptyQuery));
+    }
+
+    @Test
+    void platoAccessorRejectsOutOfRangeClassIndex() {
+        var training = trainSeries();
+        var classifier = new ContrastProfileClassifier(WINDOW, training);
+        var relativeFrequency =
+            new RelativeFrequencyContrastProfileClassifier(WINDOW, 3, training);
+
+        assertEquals(WINDOW, classifier.plato(0).length);
+        assertEquals(WINDOW, classifier.plato(classifier.numClasses() - 1).length);
+        assertEquals(WINDOW, relativeFrequency.plato(0).length);
+        assertEquals(WINDOW,
+            relativeFrequency.plato(relativeFrequency.numClasses() - 1).length);
+
+        assertThrows(IllegalArgumentException.class, () -> classifier.plato(-1));
+        assertThrows(IllegalArgumentException.class,
+            () -> classifier.plato(classifier.numClasses()));
+        assertThrows(IllegalArgumentException.class, () -> relativeFrequency.plato(-1));
+        assertThrows(IllegalArgumentException.class,
+            () -> relativeFrequency.plato(relativeFrequency.numClasses()));
     }
 
     private static int argMin(double[] values) {
