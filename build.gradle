@@ -1,16 +1,12 @@
 plugins {
     id 'java'
     id 'java-library'
-    id 'groovy'
     id 'idea'
     id 'maven-publish'
 }
 
 group = 'com.github.eugene-kamenev'
-version = '1.1'
-
-sourceCompatibility = '17'
-targetCompatibility = '17'
+    version = '1.2'
 
 repositories {
     mavenLocal()
@@ -19,7 +15,8 @@ repositories {
 
 dependencies {
     api "org.apache.commons:commons-math3:$commonsMathVersion"
-    testImplementation "org.spockframework:spock-core:$spockVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junitPlatformVersion"
 }
 
 tasks.named('test') {
@@ -27,7 +24,34 @@ tasks.named('test') {
 }
 
 java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
     withSourcesJar()
+}
+
+def env = [:]
+
+def envFile = file('.env')
+
+if (envFile.exists()) {
+    envFile.eachLine { line ->
+        line = line.trim()
+
+        if (!line || line.startsWith('#')) {
+            return
+        }
+
+        def parts = line.split('=', 2)
+
+        if (parts.length == 2) {
+            env[parts[0].trim()] = parts[1].trim()
+        }
+    }
+}
+
+def getEnv = { String name ->
+    System.getenv(name) ?: env[name]
 }
 
 publishing {
@@ -68,8 +92,22 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/eugene-kamenev/tsmp4j")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.password") ?: System.getenv("TOKEN")
+                username = project.findProperty("gpr.user") ?: getEnv("USERNAME")
+                password = project.findProperty("gpr.password") ?: getEnv("TOKEN")
+            }
+        }
+
+        maven {
+            name = "Gitea"
+            url = uri(getEnv('GITEA_URL'))
+            allowInsecureProtocol = true
+            credentials(HttpHeaderCredentials) {
+                name = "Authorization"
+                value = "token ${getEnv('GITEA_TOKEN')}"
+            }
+
+            authentication {
+                header(HttpHeaderAuthentication)
             }
         }
     }

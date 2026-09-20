@@ -22,6 +22,7 @@ import com.github.eugene.kamenev.tsmp4j.algo.mp.BaseMatrixProfileAlgorithm;
 import com.github.eugene.kamenev.tsmp4j.algo.mp.MatrixProfile;
 import com.github.eugene.kamenev.tsmp4j.stats.NoStatistic;
 import com.github.eugene.kamenev.tsmp4j.stats.RollingWindowStatistics;
+import com.github.eugene.kamenev.tsmp4j.stats.WindowStatistic;
 import java.util.Arrays;
 
 /**
@@ -48,7 +49,80 @@ public class AAMP extends BaseMatrixProfileAlgorithm<NoStatistic, MatrixProfile>
 
     @Override
     public MatrixProfile get(RollingWindowStatistics<NoStatistic> query) {
-        throw new UnsupportedOperationException();
+        if (this.isReady()) {
+            return aamp(this.rollingStatistics(), query, this.p);
+        }
+        return null;
+    }
+
+    /**
+     * Computes matrix profile join between two time series with the "pure" (non-normalized)
+     * distance. As in {@code STAMP} and {@code STOMP}, the exclusion zone is not applicable to a
+     * join between two different series, hence it is not used here.
+     *
+     * @param ts reference time series
+     * @param query query time series
+     * @param p the power of the distance
+     * @return matrix profile of {@code ts} against {@code query} in
+     *     {@code profile}/{@code indexes} and matrix profile of {@code query} against {@code ts}
+     *     in {@code leftProfile}/{@code leftIndexes}
+     */
+    public static <S extends WindowStatistic> MatrixProfile aamp(RollingWindowStatistics<S> ts,
+        RollingWindowStatistics<S> query, double p) {
+        int m = ts.windowSize();
+        if (query.dataSize() < m) {
+            throw new IllegalArgumentException(
+                "Query must be at least as long as the window size.");
+        }
+
+        double[] mp = new double[ts.dataSize() - m + 1];
+        int[] mpi = new int[mp.length];
+        double[] mpb = new double[query.dataSize() - m + 1];
+        int[] mpib = new int[mpb.length];
+        Arrays.fill(mp, Double.POSITIVE_INFINITY);
+        Arrays.fill(mpb, Double.POSITIVE_INFINITY);
+
+        // AB Join
+        join(ts, query, mp, mpi, mpb, mpib, m, p);
+        // BA Join
+        join(query, ts, mpb, mpib, mp, mpi, m, p);
+
+        return new BaseMatrixProfile(m, 0d, normalize(mp, p), mpi, null, normalize(mpb, p), null, mpib);
+    }
+
+    private static <S extends WindowStatistic> void join(RollingWindowStatistics<S> a,
+        RollingWindowStatistics<S> b, double[] mp, int[] mpi, double[] mpb, int[] mpib, int w, double p) {
+        int amx = a.dataSize() - w + 1;
+        int bmx = b.dataSize() - w + 1;
+        for (int ia = 0; ia < amx; ia++) {
+            int mx = Math.min(amx - ia, bmx);
+            double d = 0;
+            for (int k = 0; k < w; k++) {
+                d += Math.pow(Math.abs(a.x(ia + k) - b.x(k)), p);
+            }
+            for (int ib = 0; ib < mx; ib++) {
+                if (ib > 0) {
+                    d = d - Math.pow(Math.abs(a.x(ia + ib - 1) - b.x(ib - 1)), p) +
+                        Math.pow(Math.abs(a.x(ia + ib - 1 + w) - b.x(ib - 1 + w)), p);
+                }
+                if (d < mp[ia + ib]) {
+                    mp[ia + ib] = d;
+                    mpi[ia + ib] = ib;
+                }
+                if (d < mpb[ib]) {
+                    mpb[ib] = d;
+                    mpib[ib] = ia + ib;
+                }
+            }
+        }
+    }
+
+    private static double[] normalize(double[] dmin, double p) {
+        for (int i = 0; i < dmin.length; i++) {
+            dmin[i] = Math.max(dmin[i], 0);
+            dmin[i] = Math.pow(dmin[i], 1.0 / p);
+        }
+        return dmin;
     }
 
     @Override
@@ -99,11 +173,6 @@ public class AAMP extends BaseMatrixProfileAlgorithm<NoStatistic, MatrixProfile>
             }
         }
 
-        for (int i = 0; i < Dmin.length; i++) {
-            Dmin[i] = Math.max(Dmin[i], 0);
-            Dmin[i] = Math.pow(Dmin[i], 1.0 / p);
-        }
-
-        return new BaseMatrixProfile(m, exclusionZone, Dmin, minind);
+        return new BaseMatrixProfile(m, exclusionZone, normalize(Dmin, p), minind);
     }
 }
