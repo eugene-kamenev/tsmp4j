@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 ![Java](https://img.shields.io/badge/Java-21-orange.svg)
-![Version](https://img.shields.io/badge/version-1.1-informational.svg)
+![Version](https://img.shields.io/badge/version-1.2-informational.svg)
 
 TSMP4J is a Java implementation of the [Matrix Profile](https://www.cs.ucr.edu/~eamonn/MatrixProfile.html)
 family of algorithms and its downstream primitives. It is an attempt to port the algorithms collected
@@ -55,7 +55,7 @@ lookups on the same array.
 
 ### From your build tool
 
-`build.gradle` publishes the library as `com.github.eugene-kamenev:tsmp4j:1.1` to Maven Local and to GitHub
+`build.gradle` publishes the library as `com.github.eugene-kamenev:tsmp4j:1.2` to Maven Local and to GitHub
 Packages (`maven.pkg.github.com/eugene-kamenev/tsmp4j`). Resolve it from whichever of those you use.
 
 Gradle:
@@ -73,7 +73,7 @@ repositories {
 }
 
 dependencies {
-    implementation "com.github.eugene-kamenev:tsmp4j:1.1"
+    implementation "com.github.eugene-kamenev:tsmp4j:1.2"
 }
 ```
 
@@ -90,7 +90,7 @@ Maven:
 <dependency>
     <groupId>com.github.eugene-kamenev</groupId>
     <artifactId>tsmp4j</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
 </dependency>
 ```
 
@@ -102,7 +102,7 @@ cd tsmp4j
 ./gradlew publishToMavenLocal
 ```
 
-This installs `com.github.eugene-kamenev:tsmp4j:1.1` (jar, sources jar and POM) into `~/.m2`, which you can
+This installs `com.github.eugene-kamenev:tsmp4j:1.2` (jar, sources jar and POM) into `~/.m2`, which you can
 then resolve with `mavenLocal()`.
 
 ## Quick start
