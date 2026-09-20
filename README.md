@@ -34,6 +34,10 @@ Additionally, this library includes extra algorithms not related to matrix profi
 2. [trendSegmentR](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/extras/tguw/Trend.java) - Detection of linear trend changes for univariate time series
 3. [TGUW](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/extras/tguw/TGUW.java) - Tail-Greedy Unbalance Haar Wavelet decomposition
 
+Time series classification (built on contrast profiles):
+1. [ContrastProfileClassifier](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/ContrastProfileClassifier.java) - Nearest-plato classifier over the Contrast Profile plato of each class
+2. [RelativeFrequencyContrastProfileClassifier](/src/main/java/com/github/eugene/kamenev/tsmp4j/algo/cp/RelativeFrequencyContrastProfileClassifier.java) - Nearest-plato classifier over the Relative Frequency Contrast Profile plato of each class
+
 More algorithms will be added in the future.
 
 ## Usage
