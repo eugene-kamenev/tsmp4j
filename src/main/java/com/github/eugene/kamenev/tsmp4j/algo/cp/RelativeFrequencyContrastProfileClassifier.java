@@ -50,6 +50,18 @@ public final class RelativeFrequencyContrastProfileClassifier {
         if (classTrainingSeries.length < 2) {
             throw new IllegalArgumentException("At least two classes are required");
         }
+        if (windowSize <= 0) {
+            throw new IllegalArgumentException("windowSize must be positive");
+        }
+        if (maxFreq <= 0) {
+            throw new IllegalArgumentException("maxFreq must be positive");
+        }
+        for (double[] series : classTrainingSeries) {
+            if (series == null || series.length <= windowSize) {
+                throw new IllegalArgumentException(
+                    "Each training series must be non-null and longer than windowSize");
+            }
+        }
         this.windowSize = windowSize;
         this.maxFreq = maxFreq;
         this.platos = new double[classTrainingSeries.length][];

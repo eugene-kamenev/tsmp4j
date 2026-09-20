@@ -17,8 +17,6 @@
 
 package com.github.eugene.kamenev.tsmp4j.algo.cp;
 
-import java.util.Arrays;
-
 /**
  * Shared decision rule for the contrast-profile based time series classifiers.
  * <p>
@@ -30,6 +28,9 @@ import java.util.Arrays;
  * </p>
  */
 final class PlatoNearestNeighbor {
+
+    /** Tolerance below which a subsequence is treated as constant and normalized to zeros. */
+    private static final double STD_EPSILON = 1e-10d;
 
     private PlatoNearestNeighbor() {
     }
@@ -60,39 +61,105 @@ final class PlatoNearestNeighbor {
         return distances;
     }
 
+    /**
+     * @return the smallest z-normalized Euclidean distance between {@code pattern} and any
+     * subsequence of {@code query}
+     * @throws IllegalArgumentException if {@code query} is shorter than {@code pattern}
+     */
     static double minDistance(double[] query, double[] pattern) {
         int m = pattern.length;
         if (query.length < m) {
-            return euclidean(zNormalize(query), zNormalize(pattern));
+            throw new IllegalArgumentException(
+                "Query of length " + query.length + " is shorter than the plato of length " + m);
         }
         double[] normalizedPattern = zNormalize(pattern);
-        double min = Double.POSITIVE_INFINITY;
-        for (int i = 0; i + m <= query.length; i++) {
-            double d = euclidean(zNormalize(Arrays.copyOfRange(query, i, i + m)), normalizedPattern);
-            if (d < min) {
-                min = d;
+        // Z-normalization is shift invariant, so the scan carries its running statistics on
+        // residuals around the middle of the query's value range. Every accumulated quantity then
+        // stays small: neither the running variance nor the deviations lose precision when the
+        // series sits on a large constant offset.
+        double low = query[0];
+        double high = query[0];
+        for (double v : query) {
+            low = Math.min(low, v);
+            high = Math.max(high, v);
+        }
+        double reference = (low + high) / 2.0d;
+        double residualSum = 0.0d;
+        for (int i = 0; i < m; i++) {
+            residualSum += query[i] - reference;
+        }
+        double meanResidual = residualSum / m;
+        double sumSquaredDeviations = 0.0d;
+        for (int i = 0; i < m; i++) {
+            double deviation = (query[i] - reference) - meanResidual;
+            sumSquaredDeviations += deviation * deviation;
+        }
+        double minSquared = Double.POSITIVE_INFINITY;
+        for (int start = 0; start + m <= query.length; start++) {
+            double std = Math.sqrt(Math.max(0.0d, sumSquaredDeviations / m));
+            double squaredDistance = 0.0d;
+            if (std < STD_EPSILON) {
+                for (int k = 0; k < m; k++) {
+                    squaredDistance += normalizedPattern[k] * normalizedPattern[k];
+                }
+            } else {
+                double scale = 1.0d / std;
+                for (int k = 0; k < m; k++) {
+                    double deviation = (query[start + k] - reference) - meanResidual;
+                    double diff = deviation * scale - normalizedPattern[k];
+                    squaredDistance += diff * diff;
+                }
+            }
+            if (squaredDistance < minSquared) {
+                minSquared = squaredDistance;
+            }
+            if (start + m < query.length) {
+                double outgoing = query[start] - reference;
+                double incoming = query[start + m] - reference;
+                double delta = incoming - outgoing;
+                // Sliding update of the sum of squared deviations: ssd' = ssd
+                //   + (in - out) * ((in - mean') + (out - mean)).
+                double nextMeanResidual = meanResidual + delta / m;
+                sumSquaredDeviations +=
+                    delta * ((incoming - nextMeanResidual) + (outgoing - meanResidual));
+                meanResidual = nextMeanResidual;
             }
         }
-        return min;
+        return Math.sqrt(minSquared);
     }
 
     private static double[] zNormalize(double[] data) {
-        double mean = Arrays.stream(data).average().orElse(0);
-        double variance = Arrays.stream(data).map(x -> (x - mean) * (x - mean)).average().orElse(0);
-        double std = Math.sqrt(variance);
-        if (std == 0) {
+        if (data.length == 0) {
             return new double[data.length];
         }
-        return Arrays.stream(data).map(x -> (x - mean) / std).toArray();
-    }
-
-    private static double euclidean(double[] a, double[] b) {
-        double sum = 0;
-        for (int i = 0; i < a.length; i++) {
-            double diff = a[i] - b[i];
-            sum += diff * diff;
+        double low = data[0];
+        double high = data[0];
+        for (double v : data) {
+            low = Math.min(low, v);
+            high = Math.max(high, v);
         }
-        return Math.sqrt(sum);
+        double reference = (low + high) / 2.0d;
+        double mean = 0.0d;
+        for (double v : data) {
+            mean += v - reference;
+        }
+        mean /= data.length;
+        double variance = 0.0d;
+        for (double v : data) {
+            double deviation = (v - reference) - mean;
+            variance += deviation * deviation;
+        }
+        variance /= data.length;
+        double std = Math.sqrt(variance);
+        if (std < STD_EPSILON) {
+            return new double[data.length];
+        }
+        double[] normalized = new double[data.length];
+        double scale = 1.0d / std;
+        for (int i = 0; i < data.length; i++) {
+            normalized[i] = ((data[i] - reference) - mean) * scale;
+        }
+        return normalized;
     }
 
     /**

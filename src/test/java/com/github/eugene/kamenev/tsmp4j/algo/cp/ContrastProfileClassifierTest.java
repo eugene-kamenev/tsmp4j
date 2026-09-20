@@ -3,6 +3,7 @@ package com.github.eugene.kamenev.tsmp4j.algo.cp;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -110,6 +111,63 @@ class ContrastProfileClassifierTest extends com.github.eugene.kamenev.tsmp4j.Bas
                 }
             }
         }
+    }
+
+    @Test
+    void contrastProfileClassifierRejectsDegenerateArguments() {
+        var training = trainSeries();
+
+        assertThrows(IllegalArgumentException.class,
+            () -> new ContrastProfileClassifier(0, training));
+        assertThrows(IllegalArgumentException.class,
+            () -> new ContrastProfileClassifier(-WINDOW, training));
+        assertThrows(IllegalArgumentException.class,
+            () -> new ContrastProfileClassifier(WINDOW, new double[][]{training[0]}));
+
+        var withNullClass = training.clone();
+        withNullClass[1] = null;
+        assertThrows(IllegalArgumentException.class,
+            () -> new ContrastProfileClassifier(WINDOW, withNullClass));
+
+        var notLongerThanWindow = training.clone();
+        notLongerThanWindow[1] = new double[WINDOW];
+        assertThrows(IllegalArgumentException.class,
+            () -> new ContrastProfileClassifier(WINDOW, notLongerThanWindow));
+    }
+
+    @Test
+    void relativeFrequencyClassifierRejectsDegenerateArguments() {
+        var training = trainSeries();
+
+        assertThrows(IllegalArgumentException.class,
+            () -> new RelativeFrequencyContrastProfileClassifier(0, 3, training));
+        assertThrows(IllegalArgumentException.class,
+            () -> new RelativeFrequencyContrastProfileClassifier(WINDOW, 0, training));
+        assertThrows(IllegalArgumentException.class,
+            () -> new RelativeFrequencyContrastProfileClassifier(WINDOW, -3, training));
+        assertThrows(IllegalArgumentException.class,
+            () -> new RelativeFrequencyContrastProfileClassifier(WINDOW, 3,
+                new double[][]{training[0]}));
+
+        var withNullClass = training.clone();
+        withNullClass[2] = null;
+        assertThrows(IllegalArgumentException.class,
+            () -> new RelativeFrequencyContrastProfileClassifier(WINDOW, 3, withNullClass));
+
+        var notLongerThanWindow = training.clone();
+        notLongerThanWindow[0] = new double[WINDOW];
+        assertThrows(IllegalArgumentException.class,
+            () -> new RelativeFrequencyContrastProfileClassifier(WINDOW, 3, notLongerThanWindow));
+    }
+
+    @Test
+    void classifiersRejectQueryShorterThanWindow() {
+        var training = trainSeries();
+        var classifier = new ContrastProfileClassifier(WINDOW, training);
+        var shortQuery = new double[WINDOW - 1];
+
+        assertThrows(IllegalArgumentException.class, () -> classifier.classify(shortQuery));
+        assertThrows(IllegalArgumentException.class, () -> classifier.distances(shortQuery));
     }
 
     private static int argMin(double[] values) {
