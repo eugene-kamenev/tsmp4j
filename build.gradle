@@ -96,18 +96,19 @@ publishing {
                 password = project.findProperty("gpr.password") ?: getEnv("TOKEN")
             }
         }
+        if (getEnv('GITEA_URL') && getEnv('GITEA_TOKEN')) {
+            maven {
+                name = "Gitea"
+                url = uri(getEnv('GITEA_URL'))
+                allowInsecureProtocol = true
+                credentials(HttpHeaderCredentials) {
+                    name = "Authorization"
+                    value = "token ${getEnv('GITEA_TOKEN')}"
+                }
 
-        maven {
-            name = "Gitea"
-            url = uri(getEnv('GITEA_URL'))
-            allowInsecureProtocol = true
-            credentials(HttpHeaderCredentials) {
-                name = "Authorization"
-                value = "token ${getEnv('GITEA_TOKEN')}"
-            }
-
-            authentication {
-                header(HttpHeaderAuthentication)
+                authentication {
+                    header(HttpHeaderAuthentication)
+                }
             }
         }
     }
